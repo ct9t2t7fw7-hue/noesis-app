@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Noesis — Beta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-950:#081226;
+    --navy-900:#0c1c3a;
+    --blue-800:#123a72;
+    --blue-700:#1b4b8f;
+    --blue-600:#2563a8;
+    --blue-500:#3b82f6;
+    --blue-300:#8fb8f0;
+    --blue-100:#dce9fb;
+    --blue-050:#f2f7fd;
+    --ink:#0b1526;
+    --slate:#5b6b85;
+    --white:#ffffff;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{ height:100%; margin:0; }
+  body{
+    font-family:'Inter',sans-serif;
+    background:
+      radial-gradient(circle at 15% 10%, #0f2a54 0%, transparent 45%),
+      radial-gradient(circle at 85% 90%, #0a1a38 0%, transparent 50%),
+      var(--navy-950);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px 16px;
+  }
+  .outer-label{
+    position:fixed; top:20px; left:50%; transform:translateX(-50%);
+    color:var(--blue-300); font-size:12px; letter-spacing:.1em; text-transform:uppercase;
+    font-weight:700; display:flex; align-items:center; gap:8px;
+  }
+  .outer-label::before{ content:""; width:6px;height:6px;border-radius:50%; background:#4ade80; box-shadow:0 0 8px #4ade80; }
+
+  .phone{
+    width:390px;
+    height:800px;
+    max-height:92vh;
+    background:var(--ink);
+    border-radius:48px;
+    padding:12px;
+    box-shadow:
+      0 60px 100px -20px rgba(0,0,0,.65),
+      0 0 0 1px rgba(140,180,255,.08),
+      inset 0 0 0 1px rgba(140,180,255,.05);
+    position:relative;
+  }
+  .screen{
+    width:100%;
+    height:100%;
+    background:var(--blue-050);
+    border-radius:36px;
+    overflow:hidden;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    color:var(--ink);
+  }
+  .notch{
+    position:absolute; top:8px; left:50%; transform:translateX(-50%);
+    width:110px; height:20px; background:var(--ink); border-radius:14px; z-index:30;
+  }
+  .statusbar{
+    height:36px; display:flex; align-items:flex-end; justify-content:space-between;
+    padding:0 26px 6px; font-size:12px; font-weight:700; color:var(--ink); flex-shrink:0;
+    background:var(--white);
+  }
+
+  .view{ flex:1; display:none; flex-direction:column; min-height:0; }
+  .view.active{ display:flex; }
+
+  .appbar{ padding:8px 16px 10px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; background:var(--white); }
+  .brand{ font-family:'Fraunces',serif; font-weight:600; font-size:20px; color:var(--blue-700); letter-spacing:-.01em; }
+  .brand .dot{ color:var(--blue-500); }
+  .icon-btn{ width:28px;height:28px; display:flex;align-items:center;justify-content:center; color:var(--blue-700); cursor:pointer; font-size:17px; position:relative; border:none; background:none; }
+  .notif-dot{ position:absolute; top:2px; right:2px; width:8px;height:8px;border-radius:50%; background:#ef4444; }
+
+  .filters{ display:flex; gap:6px; padding:8px 14px 10px; background:var(--white); border-bottom:1px solid var(--blue-100); flex-shrink:0; overflow-x:auto; }
+
+  .feed-tabs{ display:flex; padding:2px 14px 0; background:var(--white); flex-shrink:0; gap:22px; }
+  .feed-tab{ padding:10px 2px; font-size:13px; font-weight:700; color:var(--slate); cursor:pointer; position:relative; }
+  .feed-tab.active{ color:var(--blue-700); }
+  .feed-tab.active::after{ content:""; position:absolute; bottom:-1px; left:0; right:0; height:2px; background:var(--blue-700); border-radius:2px; }
+  .pill{ font-size:11px; font-weight:600; padding:6px 13px; border-radius:20px; border:1px solid var(--blue-100); color:var(--blue-700); background:var(--blue-050); white-space:nowrap; cursor:pointer; user-select:none; transition:.15s; }
+  .pill.active{ background:var(--blue-700); color:var(--white); border-color:var(--blue-700); }
+  .pill:hover{ border-color:var(--blue-500); }
+
+  .stories{ display:flex; gap:13px; padding:12px 14px; overflow-x:auto; background:var(--white); border-bottom:1px solid var(--blue-100); flex-shrink:0; }
+  .story{ display:flex; flex-direction:column; align-items:center; gap:5px; flex-shrink:0; cursor:pointer; }
+  .story-ring{ width:56px;height:56px;border-radius:50%; padding:2px; background:conic-gradient(from 200deg, var(--blue-500), var(--blue-300), var(--blue-700), var(--blue-500)); display:flex;align-items:center;justify-content:center; }
+  .story-ring.seen{ background:var(--blue-100); }
+  .story-avatar{ width:100%;height:100%;border-radius:50%; background:var(--blue-600); border:2px solid var(--white); display:flex;align-items:center;justify-content:center; font-size:18px; }
+  .story-name{ font-size:9.5px; color:var(--slate); font-weight:600; max-width:56px; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* Story viewer overlay */
+  .story-overlay{
+    position:absolute; inset:0; z-index:100;
+    display:none; flex-direction:column;
+    background:var(--navy-950);
+  }
+  .story-overlay.active{ display:flex; }
+  .story-segs{ display:flex; gap:4px; padding:14px 10px 0; flex-shrink:0; }
+  .story-seg{ flex:1; height:3px; border-radius:3px; background:rgba(255,255,255,.28); overflow:hidden; }
+  .story-seg-fill{ height:100%; width:0%; background:var(--white); border-radius:3px; }
+  .story-seg-fill.animate{ transition:width 4s linear; }
+  .story-header{ display:flex; align-items:center; justify-content:space-between; padding:10px 14px 0; flex-shrink:0; }
+  .story-header-left{ display:flex; align-items:center; gap:9px; }
+  .story-header-avatar{ width:30px;height:30px;border-radius:50%; background:rgba(255,255,255,.2); display:flex;align-items:center;justify-content:center; font-size:15px; }
+  .story-header-name{ color:var(--white); font-size:12.5px; font-weight:700; }
+  .story-header-sub{ color:rgba(255,255,255,.6); font-size:10px; }
+  .story-close{ color:var(--white); font-size:20px; cursor:pointer; padding:4px 8px; }
+  .story-content{ flex:1; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .story-icon-big{ font-size:88px; filter:drop-shadow(0 10px 30px rgba(0,0,0,.35)); }
+  .story-fact-card{
+    position:absolute; left:16px; right:16px; bottom:26px;
+    background:rgba(8,18,38,.55); backdrop-filter:blur(6px);
+    border-radius:16px; padding:16px; color:var(--white);
+  }
+  .story-fact-eyebrow{ font-size:9.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--blue-300); margin-bottom:6px; }
+  .story-fact-text{ font-family:'Fraunces',serif; font-size:14.5px; line-height:1.45; }
+  .story-tap-left, .story-tap-right{ position:absolute; top:0; bottom:0; width:35%; z-index:5; cursor:pointer; }
+  .story-tap-left{ left:0; }
+  .story-tap-right{ right:0; width:65%; }
+  .story-cta{
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    padding:14px; color:var(--white); font-size:12px; font-weight:700;
+    flex-shrink:0; background:rgba(255,255,255,.08); cursor:pointer;
+  }
+
+  .feed{ flex:1; overflow-y:auto; background:var(--blue-050); -webkit-overflow-scrolling:touch; }
+  .post{ background:var(--white); margin-bottom:8px; animation:fadein .25s ease; }
+  @keyframes fadein{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  .post-head{ display:flex; align-items:center; justify-content:space-between; padding:11px 14px; }
+  .post-user{ display:flex; align-items:center; gap:9px; }
+  .avatar-sm{ width:34px;height:34px;border-radius:50%; background:var(--blue-600); display:flex;align-items:center;justify-content:center; font-size:14px; flex-shrink:0; }
+  .post-meta{ display:flex; flex-direction:column; }
+  .post-name{ font-size:12.5px; font-weight:700; display:flex; align-items:center; gap:5px; }
+  .badge-pro{ font-size:8px; font-weight:800; letter-spacing:.03em; color:var(--white); background:var(--blue-700); padding:1.5px 5px; border-radius:4px; }
+  .post-theme{ font-size:10.5px; color:var(--slate); }
+  .dewey{ font-size:9px; color:var(--blue-500); font-weight:700; font-variant-numeric:tabular-nums; }
+  .post-media{ height:210px; width:100%; display:flex; align-items:center; justify-content:center; position:relative; color:var(--white); font-family:'Fraunces',serif; font-size:17px; text-align:center; padding:16px; }
+  .post-media.text{ background:var(--blue-050); color:var(--ink); align-items:flex-start; justify-content:flex-start; text-align:left; }
+  .media-tag{ position:absolute; top:10px; left:10px; font-size:9px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; background:rgba(8,18,38,.5); padding:3px 9px; border-radius:20px; }
+  .play-badge{ position:absolute; width:46px;height:46px;border-radius:50%; background:rgba(255,255,255,.25); display:flex;align-items:center;justify-content:center; font-size:18px; backdrop-filter:blur(2px); }
+  .text-post-body .lead{ font-weight:600; font-size:14.5px; }
+  .text-post-body{ font-size:13px; line-height:1.55; font-family:'Fraunces',serif; }
+  .post-actions{ display:flex; align-items:center; gap:16px; padding:10px 14px 4px; color:var(--blue-700); font-size:16px; }
+  .action-btn{ cursor:pointer; display:flex; align-items:center; gap:5px; font-size:12px; font-weight:600; color:var(--slate); user-select:none; }
+  .action-btn.liked{ color:#ef4444; }
+  .post-caption{ padding:2px 14px 13px; font-size:12px; line-height:1.45; }
+  .post-caption b{ font-weight:700; }
+
+  .ad-post{ background:var(--blue-100); margin-bottom:8px; padding:12px 14px; display:flex; gap:10px; align-items:center; }
+  .ad-badge{ font-size:9px; font-weight:800; color:var(--blue-700); background:var(--white); padding:2px 7px; border-radius:5px; flex-shrink:0; }
+  .ad-block-img{ width:44px;height:44px;border-radius:10px; background:var(--blue-500); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .ad-txt{ font-size:11.5px; color:var(--ink); }
+  .ad-txt small{ display:block; color:var(--slate); font-size:10px; margin-top:2px; }
+  .upgrade-strip{ margin:0 0 8px; background:var(--navy-900); color:var(--white); padding:10px 14px; display:flex; align-items:center; justify-content:space-between; font-size:11px; }
+  .upgrade-strip b{ color:var(--blue-300); font-family:'Fraunces',serif; font-size:12.5px; display:block; font-weight:600; }
+  .mini-btn{ background:var(--blue-500); color:var(--white); font-size:10px; font-weight:700; padding:6px 10px; border-radius:8px; border:none; cursor:pointer; white-space:nowrap; }
+
+  .navbar{ height:60px; flex-shrink:0; display:flex; align-items:center; justify-content:space-around; background:var(--white); border-top:1px solid var(--blue-100); }
+  .nav-item{ display:flex; flex-direction:column; align-items:center; gap:2px; color:var(--slate); cursor:pointer; font-size:20px; width:20%; }
+  .nav-item.active{ color:var(--blue-700); }
+  .nav-plus{ width:36px;height:36px;border-radius:10px; background:var(--blue-700); display:flex;align-items:center;justify-content:center; color:var(--white); font-size:20px; }
+
+  .discovery-head{ padding:16px 16px 6px; background:var(--white); flex-shrink:0; }
+  .discovery-title{ font-family:'Fraunces',serif; font-size:23px; font-weight:600; color:var(--blue-800); }
+  .search-box{ margin-top:10px; background:var(--blue-050); border:1px solid var(--blue-100); border-radius:12px; padding:10px 12px; font-size:12.5px; color:var(--slate); display:flex; align-items:center; gap:8px; }
+  .search-box input{ border:none; background:none; outline:none; font-size:12.5px; width:100%; font-family:'Inter',sans-serif; color:var(--ink); }
+  .theme-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:14px 16px; overflow-y:auto; flex:1; background:var(--blue-050); }
+  .theme-card{ border-radius:16px; padding:14px 12px 12px; color:var(--white); display:flex; flex-direction:column; justify-content:space-between; height:104px; position:relative; overflow:hidden; cursor:pointer; transition:transform .12s; }
+  .theme-card:active{ transform:scale(.96); }
+  .theme-card .num{ font-size:10px; opacity:.6; font-weight:700; font-variant-numeric:tabular-nums; }
+  .theme-card .name{ font-family:'Fraunces',serif; font-size:16.5px; font-weight:600; }
+  .theme-card .count{ font-size:9.5px; opacity:.75; }
+  .theme-card.following::after{ content:"✓ Following"; position:absolute; bottom:10px; right:10px; font-size:8.5px; background:rgba(255,255,255,.25); padding:2px 7px; border-radius:20px; }
+  .back-row{ display:flex; align-items:center; gap:8px; padding:14px 16px 0; background:var(--white); font-size:13px; font-weight:700; color:var(--blue-700); cursor:pointer; }
+
+  .clickable-user{ cursor:pointer; }
+  .creator-follow-btn{ font-size:11px; font-weight:700; padding:6px 14px; border-radius:20px; border:1.5px solid var(--blue-700); color:var(--blue-700); background:var(--white); cursor:pointer; }
+  .creator-follow-btn.following{ background:var(--blue-700); color:var(--white); }
+  .creator-contact-row{ display:flex; gap:8px; margin-top:14px; }
+  .creator-contact-row .creator-follow-btn{ flex:1; text-align:center; }
+  .contact-locked{ background:var(--navy-900); color:var(--white); border:none; }
+
+  .profile-scroll{ flex:1; overflow-y:auto; background:var(--blue-050); }
+  .profile-top{ background:var(--white); padding:20px 16px 14px; flex-shrink:0; }
+  .profile-row{ display:flex; gap:14px; align-items:center; }
+  .avatar-lg{ width:70px;height:70px;border-radius:50%; background:linear-gradient(145deg,var(--blue-600),var(--blue-800)); display:flex;align-items:center;justify-content:center; font-family:'Fraunces',serif; font-size:25px; color:var(--white); flex-shrink:0; }
+  .profile-stats{ display:flex; gap:18px; flex:1; justify-content:space-around; }
+  .stat{ text-align:center; }
+  .stat b{ display:block; font-size:15px; }
+  .stat span{ font-size:10px; color:var(--slate); }
+  .profile-name{ font-weight:700; font-size:14.5px; margin-top:14px; }
+  .profile-status{ display:inline-flex; align-items:center; gap:4px; margin-top:7px; font-size:10.5px; font-weight:700; color:var(--blue-700); background:var(--blue-100); padding:4px 10px; border-radius:20px; }
+  .profile-bio{ font-size:11.5px; color:var(--slate); margin-top:9px; line-height:1.45; }
+  .interests-row{ display:flex; gap:5px; margin-top:11px; flex-wrap:wrap; }
+  .interest-chip{ font-size:9.5px; font-weight:600; color:var(--blue-700); background:var(--blue-050); border:1px solid var(--blue-100); padding:3px 9px; border-radius:20px; }
+  .settings-block{ background:var(--white); margin-top:8px; padding:16px; }
+  .settings-title{ font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--slate); margin-bottom:10px; }
+  .toggle-row{ display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--blue-050); }
+  .toggle-row:last-child{ border-bottom:none; }
+  .toggle-label{ font-size:12.5px; font-weight:600; }
+  .toggle-sub{ font-size:10px; color:var(--slate); margin-top:2px; }
+  .switch{ width:42px; height:24px; border-radius:20px; background:var(--blue-100); position:relative; cursor:pointer; flex-shrink:0; transition:.2s; }
+  .switch.on{ background:var(--blue-700); }
+  .switch::after{ content:""; position:absolute; top:2px; left:2px; width:20px;height:20px; border-radius:50%; background:var(--white); transition:.2s; box-shadow:0 1px 3px rgba(0,0,0,.25); }
+  .switch.on::after{ left:20px; }
+  .role-choice{ display:flex; gap:8px; }
+  .role-opt{ flex:1; text-align:center; padding:10px 6px; border-radius:12px; border:1.5px solid var(--blue-100); font-size:11.5px; font-weight:600; color:var(--slate); cursor:pointer; }
+  .role-opt.active{ border-color:var(--blue-700); background:var(--blue-100); color:var(--blue-700); }
+  .premium-banner{ background:linear-gradient(120deg,var(--navy-900),var(--blue-700)); color:var(--white); border-radius:14px; padding:14px; margin-top:14px; }
+  .premium-banner b{ font-family:'Fraunces',serif; font-size:14px; font-weight:600; color:var(--blue-300); display:block; margin-bottom:4px; }
+  .premium-banner p{ font-size:11px; margin:0 0 10px; opacity:.85; line-height:1.4; }
+  .premium-btn{ background:var(--blue-500); border:none; color:var(--white); font-size:11.5px; font-weight:700; padding:9px 14px; border-radius:9px; cursor:pointer; width:100%; }
+
+  .badge-curated{ font-size:8px; font-weight:800; letter-spacing:.03em; color:var(--blue-800); background:var(--blue-300); padding:1.5px 5px; border-radius:4px; }
+  .badge-promoted{ font-size:8px; font-weight:800; letter-spacing:.03em; color:var(--white); background:var(--blue-500); padding:1.5px 5px; border-radius:4px; }
+  .boost-btn{ font-size:10px; font-weight:700; color:var(--blue-700); cursor:pointer; background:var(--blue-050); border:1px solid var(--blue-100); padding:3px 8px; border-radius:20px; white-space:nowrap; }
+  .boost-btn.boosted{ background:var(--blue-700); color:var(--white); border-color:var(--blue-700); }
+  .post.is-promoted{ box-shadow:inset 0 0 0 1.5px var(--blue-500); }
+
+  .premium-global-row{ display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:linear-gradient(120deg,var(--navy-900),var(--blue-700)); border-radius:12px; cursor:pointer; color:var(--white); }
+  .premium-global-row .toggle-label{ color:var(--white); }
+  .premium-global-row .toggle-sub{ color:rgba(255,255,255,.7); }
+  .domain-premium-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:7px; margin-top:10px; }
+  .domain-premium-opt{ border:1.5px solid var(--blue-100); border-radius:12px; padding:8px 6px; text-align:center; cursor:pointer; background:var(--white); }
+  .domain-premium-opt .dp-name{ font-size:10.5px; font-weight:700; color:var(--ink); }
+  .domain-premium-opt .dp-price{ font-size:9px; color:var(--slate); margin-top:2px; }
+  .domain-premium-opt.active{ border-color:var(--blue-700); background:var(--blue-100); }
+  .domain-premium-opt.active .dp-name{ color:var(--blue-700); }
+  .domain-premium-opt.disabled{ opacity:.45; cursor:not-allowed; }
+  .grid-tabs{ display:flex; border-top:1px solid var(--blue-100); background:var(--white); }
+  .grid-tab{ flex:1; text-align:center; padding:10px 0; font-size:10.5px; color:var(--slate); font-weight:700; cursor:pointer; }
+  .grid-tab.active{ color:var(--blue-700); border-bottom:2px solid var(--blue-700); }
+  .post-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:2px; background:var(--blue-050); padding:2px; }
+  .grid-cell{ aspect-ratio:1; display:flex; align-items:center; justify-content:center; color:var(--white); font-size:9px; font-weight:700; text-align:center; padding:4px; }
+
+  .publish-head{ background:var(--white); padding:14px 16px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; border-bottom:1px solid var(--blue-100); }
+  .publish-title{ font-family:'Fraunces',serif; font-weight:600; font-size:16.5px; color:var(--blue-800); }
+  .cancel-txt{ font-size:12.5px; color:var(--slate); cursor:pointer; }
+  .publish-body{ flex:1; overflow-y:auto; background:var(--blue-050); padding:16px; }
+  .field-label{ font-size:10.5px; font-weight:700; color:var(--slate); text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px; margin-top:16px; }
+  .field-label:first-child{ margin-top:0; }
+  .format-row{ display:flex; gap:8px; }
+  .format-opt{ flex:1; background:var(--white); border:1.5px solid var(--blue-100); border-radius:12px; padding:14px 6px; text-align:center; font-size:11px; font-weight:600; color:var(--slate); cursor:pointer; }
+  .format-opt.active{ border-color:var(--blue-700); color:var(--blue-700); background:var(--blue-100); }
+  .theme-select{ background:var(--white); border:1px solid var(--blue-100); border-radius:12px; padding:12px; font-size:12.5px; display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .theme-opt{ font-size:10px; font-weight:600; text-align:center; padding:7px 4px; border-radius:8px; background:var(--blue-050); color:var(--blue-700); cursor:pointer; }
+  .theme-opt.active{ background:var(--blue-700); color:var(--white); }
+  .upload-zone{ margin-top:0; height:120px; border:1.5px dashed var(--blue-300); border-radius:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--blue-500); font-size:11px; background:var(--white); }
+  textarea.caption-input{ width:100%; border:1px solid var(--blue-100); border-radius:12px; padding:12px; font-family:'Inter',sans-serif; font-size:12.5px; resize:none; height:80px; background:var(--white); outline:none; }
+  .publish-btn{ margin-top:22px; background:var(--blue-700); color:var(--white); text-align:center; padding:13px; border-radius:12px; font-weight:700; font-size:13px; cursor:pointer; border:none; width:100%; }
+  .publish-btn:disabled{ background:var(--blue-100); color:var(--slate); cursor:not-allowed; }
+
+  .notif-head{ background:var(--white); padding:16px; flex-shrink:0; border-bottom:1px solid var(--blue-100); }
+  .notif-list{ flex:1; overflow-y:auto; background:var(--white); }
+  .notif-row{ display:flex; gap:11px; padding:12px 16px; border-bottom:1px solid var(--blue-050); align-items:center; }
+  .notif-icon{ width:36px;height:36px;border-radius:50%; background:var(--blue-100); display:flex;align-items:center;justify-content:center; font-size:15px; flex-shrink:0; }
+  .notif-txt{ font-size:12px; line-height:1.4; }
+  .notif-txt b{ font-weight:700; }
+  .notif-time{ font-size:10px; color:var(--slate); margin-top:2px; }
+
+  .toast{ position:absolute; bottom:78px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--navy-900); color:var(--white); font-size:12px; font-weight:600; padding:10px 16px; border-radius:30px; opacity:0; pointer-events:none; transition:.25s; z-index:50; white-space:nowrap; }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  ::-webkit-scrollbar{ width:0; height:0; }
+
+  /* Dark mode overrides — scoped to .screen.dark-mode, reuses existing CSS variables */
+  .screen.dark-mode{
+    --white:#101f3d;
+    --blue-050:#071021;
+    --blue-100:#1b2f52;
+    --ink:#eaf1fc;
+    --slate:#8ea3c9;
+  }
+  .screen.dark-mode .pill{ color:#a9c8f7; }
+  .screen.dark-mode .pill.active{ color:var(--white); }
+  .screen.dark-mode .interest-chip{ color:#a9c8f7; }
+  .screen.dark-mode .theme-opt{ color:#a9c8f7; }
+  .screen.dark-mode .theme-opt.active{ color:var(--white); }
+  .screen.dark-mode .profile-status{ color:#a9c8f7; }
+  .screen.dark-mode .format-opt{ color:var(--slate); }
+  .screen.dark-mode .format-opt.active{ color:#a9c8f7; }
+  .screen.dark-mode .creator-follow-btn{ color:#a9c8f7; border-color:#3b6fc9; }
+  .screen.dark-mode .creator-follow-btn.following{ color:var(--white); }
+  .screen.dark-mode .search-box,
+  .screen.dark-mode textarea.caption-input,
+  .screen.dark-mode .theme-select,
+  .screen.dark-mode .upload-zone{ background:var(--white); border-color:var(--blue-100); color:var(--ink); }
+  .screen.dark-mode .upload-zone{ color:#8fb8f0; }
+  .screen.dark-mode .statusbar{ background:var(--white); color:var(--ink); }
+  .screen.dark-mode .role-opt{ color:var(--slate); }
+  .screen.dark-mode .story-name{ color:var(--slate); }
+</style>
+</head>
+<body>
+
+<div class="outer-label">Beta build — local preview</div>
+
+<div class="phone">
+  <div class="notch"></div>
+  <div class="screen">
+    <div class="statusbar"><span>9:41</span><span>●●●&nbsp; 📶 &nbsp;🔋</span></div>
+
+    <div class="view active" id="view-home">
+      <div class="appbar">
+        <div class="brand">Noesis<span class="dot">.</span></div>
+        <div class="icon-btn" onclick="goTo('notifications')">🔔<span class="notif-dot" id="notif-dot"></span></div>
+      </div>
+      <div class="feed-tabs" id="feed-tabs"></div>
+      <div class="filters" id="filters"></div>
+      <div class="stories" id="stories"></div>
+      <div class="feed" id="feed"></div>
+      <div class="navbar" id="navbar-home"></div>
+    </div>
+
+    <div class="view" id="view-discover">
+      <div class="discovery-head">
+        <div class="discovery-title">Discover</div>
+        <div class="search-box">🔎 <input placeholder="Search a topic or creator…" oninput="searchTopics(this.value)"></div>
+      </div>
+      <div class="theme-grid" id="theme-grid"></div>
+      <div class="navbar" id="navbar-discover"></div>
+    </div>
+
+    <div class="view" id="view-topic">
+      <div class="back-row" onclick="goTo('discover')">← <span id="topic-back-label">Discover</span></div>
+      <div class="appbar" style="padding-top:10px;">
+        <div class="brand" id="topic-title" style="font-size:18px;">Topic</div>
+        <div class="icon-btn" id="follow-btn" onclick="toggleFollowCurrentTopic()">Follow</div>
+      </div>
+      <div class="feed" id="topic-feed"></div>
+      <div class="navbar" id="navbar-topic"></div>
+    </div>
+
+    <div class="view" id="view-creator">
+      <div class="back-row" id="creator-back" onclick="goTo('home')">← <span>Back</span></div>
+      <div class="profile-scroll">
+        <div class="profile-top">
+          <div class="profile-row">
+            <div class="avatar-lg" id="creator-avatar">—</div>
+            <div class="profile-stats">
+              <div class="stat"><b id="creator-stat-posts">0</b><span>Posts</span></div>
+              <div class="stat"><b id="creator-stat-followers">—</b><span>Followers</span></div>
+              <div class="stat"><b id="creator-stat-likes">0</b><span>Total likes</span></div>
+            </div>
+          </div>
+          <div class="profile-name" id="creator-name">—</div>
+          <div class="profile-status" id="creator-status-badge">—</div>
+          <div class="profile-bio" id="creator-bio">—</div>
+          <div class="interests-row" id="creator-topics"></div>
+
+          <div class="creator-contact-row">
+            <div class="creator-follow-btn" id="creator-follow-btn" onclick="toggleFollowCreator()">Follow</div>
+            <div class="creator-follow-btn contact-locked" id="creator-contact-btn" onclick="attemptContactCreator()">🔒 Contact</div>
+          </div>
+        </div>
+
+        <div class="grid-tabs"><div class="grid-tab active">Posts</div></div>
+        <div class="post-grid" id="creator-grid"></div>
+      </div>
+      <div class="navbar" id="navbar-creator"></div>
+    </div>
+
+    <div class="view" id="view-publish">
+      <div class="publish-head">
+        <div class="cancel-txt" onclick="goTo('home')">Cancel</div>
+        <div class="publish-title">New post</div>
+        <div style="width:40px;"></div>
+      </div>
+      <div class="publish-body">
+        <div class="field-label">Format</div>
+        <div class="format-row" id="format-row"></div>
+
+        <div class="field-label">Topic</div>
+        <div class="theme-select" id="publish-theme-select"></div>
+
+        <div id="publish-media-zone"></div>
+
+        <div class="field-label">Caption</div>
+        <textarea class="caption-input" id="caption-input" placeholder="Write a short caption…"></textarea>
+
+        <button class="publish-btn" id="publish-btn" onclick="submitPost()">Publish</button>
+      </div>
+      <div class="navbar" id="navbar-publish"></div>
+    </div>
+
+    <div class="view" id="view-notifications">
+      <div class="notif-head"><div class="discovery-title" style="font-size:20px;">Notifications</div></div>
+      <div class="notif-list" id="notif-list"></div>
+      <div class="navbar" id="navbar-notifications"></div>
+    </div>
+
+    <div class="view" id="view-profile">
+      <div class="profile-scroll">
+        <div class="profile-top">
+          <div class="profile-row">
+            <div class="avatar-lg" id="profile-avatar">CM</div>
+            <div class="profile-stats">
+              <div class="stat"><b id="stat-posts">0</b><span>Posts</span></div>
+              <div class="stat"><b>18.2k</b><span>Followers</span></div>
+              <div class="stat"><b id="stat-following">0</b><span>Following</span></div>
+            </div>
+          </div>
+          <div class="profile-name">Claire Mercier</div>
+          <div class="profile-status" id="profile-status-badge">🎓 Professional — History</div>
+          <div class="profile-bio">Medieval history lecturer. I turn my research into short, shareable formats.</div>
+          <div class="interests-row" id="profile-interests"></div>
+
+          <div class="premium-banner" id="premium-banner">
+            <b id="premium-banner-title">Go Premium</b>
+            <p id="premium-banner-text">Subscribe to specific domains, or go Global to remove all ads and message any creator.</p>
+            <button class="premium-btn" onclick="scrollToPremiumPlans()" id="premium-btn-text">Manage Premium plans</button>
+          </div>
+        </div>
+
+        <div class="settings-block">
+          <div class="settings-title">Account status</div>
+          <div class="role-choice">
+            <div class="role-opt" id="role-professional" onclick="setRole('professional')">🎓 Professional</div>
+            <div class="role-opt" id="role-enthusiast" onclick="setRole('enthusiast')">✨ Enthusiast</div>
+          </div>
+        </div>
+
+        <div class="settings-block" id="premium-plans-block">
+          <div class="settings-title">Premium plans</div>
+          <div class="premium-global-row" onclick="toggleGlobalPremium()">
+            <div>
+              <div class="toggle-label">🌐 Global — all domains</div>
+              <div class="toggle-sub" id="global-price-sub">$14.99/mo · No ads anywhere + contact any creator</div>
+            </div>
+            <div class="switch" id="global-switch"></div>
+          </div>
+          <div class="field-label" style="margin-top:14px;">Or subscribe by domain — $2.99/mo each</div>
+          <div class="domain-premium-grid" id="domain-premium-grid"></div>
+        </div>
+
+        <div class="settings-block">
+          <div class="settings-title">Settings</div>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Dark mode</div>
+              <div class="toggle-sub">Switch the interface to a dark blue palette</div>
+            </div>
+            <div class="switch" id="dark-switch" onclick="toggleDarkMode()"></div>
+          </div>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Push notifications</div>
+              <div class="toggle-sub">New posts from topics you follow</div>
+            </div>
+            <div class="switch on" id="push-switch" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+
+        <div class="grid-tabs">
+          <div class="grid-tab active">Posts</div>
+        </div>
+        <div class="post-grid" id="profile-grid"></div>
+      </div>
+      <div class="navbar" id="navbar-profile"></div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="story-overlay" id="story-overlay">
+      <div class="story-segs" id="story-segs"></div>
+      <div class="story-header">
+        <div class="story-header-left">
+          <div class="story-header-avatar" id="story-avatar">🏛️</div>
+          <div>
+            <div class="story-header-name" id="story-name">History</div>
+            <div class="story-header-sub">Story</div>
+          </div>
+        </div>
+        <div class="story-close" onclick="closeStoryViewer()">✕</div>
+      </div>
+      <div class="story-content" id="story-content">
+        <div class="story-tap-left" onclick="prevStory()"></div>
+        <div class="story-tap-right" onclick="nextStory()"></div>
+        <div class="story-icon-big" id="story-icon-big">🏛️</div>
+        <div class="story-fact-card">
+          <div class="story-fact-eyebrow" id="story-fact-eyebrow">Did you know</div>
+          <div class="story-fact-text" id="story-fact-text">Fact goes here.</div>
+        </div>
+      </div>
+      <div class="story-cta" onclick="openTopicFromStory()">See more in this topic →</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOPICS = [
+  {id:'history', name:'History', dewey:'930', grad:['#123a72','#1b4b8f'], icon:'🏛️'},
+  {id:'philosophy', name:'Philosophy', dewey:'100', grad:['#081226','#123a72'], icon:'♟️'},
+  {id:'art', name:'Art', dewey:'700', grad:['#2563a8','#3b82f6'], icon:'🎨'},
+  {id:'sport', name:'Sport', dewey:'790', grad:['#0c1c3a','#2563a8'], icon:'🏅'},
+  {id:'design', name:'Design', dewey:'745', grad:['#1b4b8f','#8fb8f0'], icon:'✏️'},
+  {id:'architecture', name:'Architecture', dewey:'720', grad:['#123a72','#3b82f6'], icon:'🏗️'},
+  {id:'maths', name:'Mathematics', dewey:'510', grad:['#081226','#1b4b8f'], icon:'📐'},
+  {id:'economics', name:'Economics', dewey:'330', grad:['#2563a8','#123a72'], icon:'📈'},
+  {id:'animals', name:'Animals', dewey:'590', grad:['#0c1c3a','#3b82f6'], icon:'🐾'},
+];
+
+let posts = [
+  {id:1, author:'Claire M.', status:'professional', topic:'history', format:'video', label:'The Fall of Rome', caption:"3 lesser-known economic causes behind the fall of the Western Roman Empire.", likes:842, liked:false, comments:56, promoted:false},
+  {id:2, author:'Yanis K.', status:'enthusiast', topic:'philosophy', format:'text', title:"The Ship of Theseus", body:"If every plank is replaced one by one, is it still the same ship? A simple gateway into deep questions of identity.", likes:410, liked:false, comments:31, promoted:false},
+  {id:3, author:'Studio Aro', status:'professional', topic:'design', format:'image', label:'Bauhaus color theory', caption:'Why primary colors still dominate modern interface design.', likes:1290, liked:false, comments:88, promoted:true},
+  {id:4, author:'Nadia B.', status:'enthusiast', topic:'animals', format:'video', label:'Octopus camouflage', caption:'How octopuses change texture, not just color, in under a second.', likes:2210, liked:false, comments:143, promoted:false},
+  {id:5, author:'Marco T.', status:'professional', topic:'architecture', format:'image', label:'Brutalism revisited', caption:'Why raw concrete is making a quiet comeback in public buildings.', likes:675, liked:false, comments:40, promoted:false},
+  {id:6, author:'Elena V.', status:'enthusiast', topic:'maths', format:'text', title:"Euler's identity", body:"e^(i\u03c0) + 1 = 0 — five fundamental constants in a single equation. Often called the most beautiful in mathematics.", likes:980, liked:false, comments:64, promoted:false},
+  {id:7, author:'Tom R.', status:'professional', topic:'sport', format:'video', label:'VO2 max explained', caption:'What this number actually measures, and why it matters for endurance.', likes:560, liked:false, comments:29, promoted:true},
+  {id:8, author:'Ines D.', status:'enthusiast', topic:'economics', format:'text', title:"Opportunity cost", body:"Every choice has a hidden price: the value of the best alternative you didn't pick.", likes:333, liked:false, comments:18, promoted:false},
+  {id:9, author:'Paul F.', status:'professional', topic:'art', format:'image', label:'Chiaroscuro technique', caption:'How Caravaggio used harsh light to build drama into a single frame.', likes:1502, liked:false, comments:97, promoted:false},
+];
+let nextId = 10;
+posts.forEach(p=>{ if(p.boosted === undefined) p.boosted = false; });
+
+const stories = [
+  {topic:'history', seen:false},{topic:'philosophy', seen:false},{topic:'art', seen:true},
+  {topic:'architecture', seen:false},{topic:'maths', seen:true},{topic:'economics', seen:false},
+];
+
+const notifications = [
+  {icon:'❤️', text:'<b>Yanis K.</b> liked your post about medieval trade routes.', time:'2m ago'},
+  {icon:'🎓', text:'<b>New Professional</b> started posting in Architecture.', time:'40m ago'},
+  {icon:'📈', text:'Your <b>Economics</b> post reached 1,000 views.', time:'3h ago'},
+  {icon:'💬', text:'<b>Nadia B.</b> commented on your post.', time:'Yesterday'},
+  {icon:'🏛️', text:'3 new posts in <b>History</b>, a topic you follow.', time:'Yesterday'},
+];
+
+const CURRENT_USER = 'Claire M.';
+
+const CREATORS = {
+  'Claire M.': { bio:'Medieval history lecturer. I turn my research into short, shareable formats.', followers:'18.2k', curatedTopics:['history'] },
+  'Yanis K.': { bio:'Philosophy teacher, obsessed with paradoxes and thought experiments.', followers:'9.4k', curatedTopics:[] },
+  'Studio Aro': { bio:'Design studio exploring color theory and interface history.', followers:'22.1k', curatedTopics:['design'] },
+  'Nadia B.': { bio:'Marine biology enthusiast, self-taught. I film what I find fascinating.', followers:'31.6k', curatedTopics:[] },
+  'Marco T.': { bio:'Architect based in Lisbon, writing about concrete and public space.', followers:'12.8k', curatedTopics:['architecture'] },
+  'Elena V.': { bio:'Maths graduate student. I make equations less scary, one post at a time.', followers:'15.3k', curatedTopics:[] },
+  'Tom R.': { bio:'Endurance coach. Breaking down sport science for non-scientists.', followers:'8.9k', curatedTopics:[] },
+  'Ines D.': { bio:'Economics student sharing the concepts that finally made sense to me.', followers:'6.2k', curatedTopics:[] },
+  'Paul F.': { bio:'Art historian focused on Baroque painting technique.', followers:'19.7k', curatedTopics:['art'] },
+};
+
+const state = {
+  tab: 'home',
+  filter: 'all',
+  currentTopic: null,
+  currentCreator: null,
+  role: 'professional',
+  premium: { global:false, domains:new Set() },
+  following: new Set(['history','philosophy','art','architecture','maths']),
+  followingCreators: new Set(['Yanis K.']),
+  feedTab: 'suggestions',
+  storyIndex: 0,
+  darkMode: false,
+  hasUnread: true,
+};
+
+const TABS = [
+  {id:'home', icon:'🏠'},
+  {id:'discover', icon:'🔎'},
+  {id:'publish', icon:'＋', isPlus:true},
+  {id:'notifications', icon:'🔔'},
+  {id:'profile', icon:'👤'},
+];
+
+const DOMAIN_PRICE = 2.99;
+const GLOBAL_PRICE = 14.99;
+
+function isPremiumFor(topicId){
+  return state.premium.global || state.premium.domains.has(topicId);
+}
+function hasAnyPremium(){
+  return state.premium.global || state.premium.domains.size > 0;
+}
+
+function buildNavbar(containerId, activeId){
+  const el = document.getElementById(containerId);
+  el.innerHTML = TABS.map(t=>{
+    if(t.isPlus){
+      return `<div class="nav-item" onclick="goTo('publish')"><div class="nav-plus">＋</div></div>`;
+    }
+    return `<div class="nav-item ${activeId===t.id?'active':''}" onclick="goTo('${t.id}')">${t.icon}</div>`;
+  }).join('');
+}
+
+function goTo(tab){
+  state.tab = tab;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+tab).classList.add('active');
+  if(tab==='notifications'){ state.hasUnread=false; renderNotifDot(); renderNotifications(); }
+  if(tab==='home'){ renderFeed(); }
+  if(tab==='discover'){ renderThemeGrid(); }
+  if(tab==='profile'){ renderProfile(); }
+  if(tab==='publish'){ resetPublishForm(); }
+  const map = {home:'navbar-home', discover:'navbar-discover', publish:'navbar-publish', notifications:'navbar-notifications', profile:'navbar-profile'};
+  Object.keys(map).forEach(t=> buildNavbar(map[t], tab));
+}
+
+function renderNotifDot(){
+  document.getElementById('notif-dot').style.display = state.hasUnread ? 'block':'none';
+}
+
+const FEED_TABS = [
+  {id:'suggestions', label:'For You'},
+  {id:'following', label:'Following'},
+];
+function renderFeedTabs(){
+  document.getElementById('feed-tabs').innerHTML = FEED_TABS.map(f=>
+    `<div class="feed-tab ${state.feedTab===f.id?'active':''}" onclick="setFeedTab('${f.id}')">${f.label}</div>`
+  ).join('');
+}
+function setFeedTab(id){ state.feedTab = id; renderFeedTabs(); renderFeed(); }
+function isFollowedPost(p){
+  return state.following.has(p.topic) || state.followingCreators.has(p.author);
+}
+
+const FILTERS = [
+  {id:'all', label:'All'},
+  {id:'video', label:'Videos'},
+  {id:'image', label:'Images'},
+  {id:'text', label:'Text'},
+];
+function renderFilters(){
+  document.getElementById('filters').innerHTML = FILTERS.map(f=>
+    `<div class="pill ${state.filter===f.id?'active':''}" onclick="setFilter('${f.id}')">${f.label}</div>`
+  ).join('');
+}
+function setFilter(id){ state.filter = id; renderFilters(); renderFeed(); }
+
+function renderStories(){
+  document.getElementById('stories').innerHTML = stories.map((s,i)=>{
+    const t = TOPICS.find(x=>x.id===s.topic);
+    return `<div class="story" onclick="openStoryViewer(${i})">
+      <div class="story-ring ${s.seen?'seen':''}"><div class="story-avatar">${t.icon}</div></div>
+      <div class="story-name">${t.name}</div>
+    </div>`;
+  }).join('');
+}
+
+const STORY_FACTS = {
+  history: "The Library of Alexandria wasn't destroyed in a single fire — it faded over centuries through funding cuts and neglect.",
+  philosophy: "Socrates never wrote anything down. Everything we know of him comes from his students, mainly Plato.",
+  art: "Vincent van Gogh sold only one painting during his lifetime.",
+  architecture: "The Eiffel Tower grows about 15cm taller in summer as the iron expands in the heat.",
+  maths: "Zero was not part of early Roman numerals — it arrived in Europe centuries later from India via the Arab world.",
+  economics: "The word 'salary' comes from the Latin 'salarium', linked to soldiers once being paid in salt.",
+  design: "The Bauhaus school only existed for 14 years, yet it still shapes most modern interface design.",
+  sport: "The marathon distance (42.195 km) was only standardized at the 1908 London Olympics.",
+  animals: "An octopus has three hearts, and two of them stop beating when it swims.",
+};
+
+let storyTimer = null;
+function openStoryViewer(index){
+  state.storyIndex = index;
+  document.getElementById('story-overlay').classList.add('active');
+  renderStorySegs();
+  showStoryAt(index);
+}
+function renderStorySegs(){
+  document.getElementById('story-segs').innerHTML = stories.map((s,i)=>
+    `<div class="story-seg"><div class="story-seg-fill" id="seg-fill-${i}"></div></div>`
+  ).join('');
+}
+function showStoryAt(index){
+  clearTimeout(storyTimer);
+  if(index < 0){ index = 0; }
+  if(index >= stories.length){ closeStoryViewer(); return; }
+  state.storyIndex = index;
+  stories[index].seen = true;
+  renderStories();
+
+  const t = TOPICS.find(x=>x.id===stories[index].topic);
+  document.getElementById('story-avatar').innerText = t.icon;
+  document.getElementById('story-name').innerText = t.name;
+  document.getElementById('story-icon-big').innerText = t.icon;
+  document.getElementById('story-fact-eyebrow').innerText = 'Did you know · '+t.name;
+  document.getElementById('story-fact-text').innerText = STORY_FACTS[t.id] || '';
+  document.getElementById('story-content').style.background = `linear-gradient(150deg, ${t.grad[0]}, ${t.grad[1]})`;
+
+  stories.forEach((s,i)=>{
+    const fill = document.getElementById('seg-fill-'+i);
+    fill.classList.remove('animate');
+    fill.style.width = i < index ? '100%' : '0%';
+  });
+  const currentFill = document.getElementById('seg-fill-'+index);
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      currentFill.classList.add('animate');
+      currentFill.style.width = '100%';
+    });
+  });
+  storyTimer = setTimeout(()=> nextStory(), 4000);
+}
+function nextStory(){ showStoryAt(state.storyIndex + 1); }
+function prevStory(){ showStoryAt(state.storyIndex - 1); }
+function closeStoryViewer(){
+  clearTimeout(storyTimer);
+  document.getElementById('story-overlay').classList.remove('active');
+}
+function openTopicFromStory(){
+  const topicId = stories[state.storyIndex].topic;
+  closeStoryViewer();
+  openTopic(topicId);
+}
+
+function postHTML(p){
+  const t = TOPICS.find(x=>x.id===p.topic);
+  const badge = p.status==='professional' ? '<span class="badge-pro">PRO</span>' : '';
+  const creatorInfo = CREATORS[p.author] || {};
+  const isCurated = (creatorInfo.curatedTopics || []).includes(p.topic);
+  const curatedBadge = isCurated ? '<span class="badge-curated">✓ Curated</span>' : '';
+  const promotedBadge = p.boosted ? '<span class="badge-promoted">🚀 Promoted</span>' : '';
+  let mediaBlock = '';
+  if(p.format === 'text'){
+    mediaBlock = `<div class="post-media text"><div class="text-post-body"><span class="lead">${p.title}</span><br>${p.body}</div></div>`;
+  } else {
+    const gradient = `linear-gradient(135deg, ${t.grad[0]}, ${t.grad[1]})`;
+    mediaBlock = `<div class="post-media" style="background:${gradient}">
+        <div class="media-tag">${p.format === 'video' ? 'Video' : 'Image'}</div>
+        ${p.format==='video' ? '<div class="play-badge">▶</div>' : ''}
+        ${p.label}
+      </div>`;
+  }
+  const boostBtn = p.author===CURRENT_USER
+    ? `<div class="boost-btn ${p.boosted?'boosted':''}" onclick="toggleBoost(${p.id})">${p.boosted?'🚀 Boosted':'🚀 Boost'}</div>`
+    : '';
+  return `<div class="post ${p.boosted?'is-promoted':''}">
+    <div class="post-head">
+      <div class="post-user clickable-user" onclick="openCreatorProfile('${p.author.replace(/'/g,"\\'")}')">
+        <div class="avatar-sm">${t.icon}</div>
+        <div class="post-meta">
+          <div class="post-name">${p.author} ${badge}${curatedBadge}</div>
+          <div class="post-theme">${t.name} · <span class="dewey">${t.dewey}</span> ${promotedBadge}</div>
+        </div>
+      </div>
+      ${boostBtn}
+    </div>
+    ${mediaBlock}
+    <div class="post-actions">
+      <div class="action-btn ${p.liked?'liked':''}" onclick="toggleLike(${p.id})">${p.liked?'♥':'♡'} ${p.likes}</div>
+      <div class="action-btn">💬 ${p.comments}</div>
+      <div class="action-btn">↗ Share</div>
+    </div>
+    <div class="post-caption"><b>${p.author}</b> — ${p.caption || p.body}</div>
+  </div>`;
+}
+
+function toggleLike(id){
+  const p = posts.find(x=>x.id===id);
+  p.liked = !p.liked;
+  p.likes += p.liked ? 1 : -1;
+  renderFeed();
+  if(document.getElementById('view-topic').classList.contains('active')) renderTopicFeed();
+}
+
+function toggleBoost(id){
+  const p = posts.find(x=>x.id===id);
+  p.boosted = !p.boosted;
+  showToast(p.boosted ? 'Post boosted for $4.99 — now promoted across feeds' : 'Boost cancelled');
+  renderFeed();
+  if(document.getElementById('view-topic').classList.contains('active')) renderTopicFeed();
+  if(document.getElementById('view-creator').classList.contains('active')) renderCreatorProfile();
+}
+
+function adHTML(){
+  const ads = [
+    {title:'Illustrated Atlas — Great Battles of Europe', img:'📚'},
+    {title:'DesignPro Course — Color Theory Masterclass', img:'🎨'},
+    {title:'FieldNote Journals — For Field Sketching', img:'📓'},
+  ];
+  const ad = ads[Math.floor(Math.random()*ads.length)];
+  return `<div class="ad-post">
+    <span class="ad-badge">SPONSORED</span>
+    <div class="ad-block-img">${ad.img}</div>
+    <div class="ad-txt">${ad.title}<small>Advertisement</small></div>
+  </div>`;
+}
+
+function renderFeed(){
+  renderFeedTabs();
+  renderFilters();
+  renderStories();
+  let base = posts.filter(p => state.filter==='all' || p.format===state.filter);
+  if(state.feedTab==='following'){
+    base = base.filter(isFollowedPost);
+  }
+  base = [...base].sort((a,b) => (b.boosted?1:0) - (a.boosted?1:0));
+  const filtered = base;
+  let html = '';
+  filtered.forEach((p,i)=>{
+    html += postHTML(p);
+    if((i+1)%5===0){
+      const chunk = filtered.slice(i+1-5, i+1);
+      const allCovered = chunk.every(post => isPremiumFor(post.topic));
+      if(!allCovered) html += adHTML();
+    }
+  });
+  if(!state.premium.global){
+    const hasSome = state.premium.domains.size > 0;
+    const title = hasSome ? 'Almost ad-free' : 'Enjoying the feed?';
+    const text = hasSome
+      ? 'Some domains still show ads — go Global to remove them all.'
+      : 'Subscribe to a domain or go Global to remove ads.';
+    html = `<div class="upgrade-strip"><div><b>${title}</b>${text}</div><button class="mini-btn" onclick="goTo('profile')">Upgrade</button></div>` + html;
+  }
+  const emptyMsg = state.feedTab==='following'
+    ? 'No posts yet from the topics or creators you follow. Explore Discover to follow more.'
+    : 'No posts match this filter yet.';
+  document.getElementById('feed').innerHTML = html || `<div style="padding:40px;text-align:center;color:#5b6b85;font-size:13px;">${emptyMsg}</div>`;
+}
+
+function renderThemeGrid(filterText=''){
+  const list = TOPICS.filter(t => t.name.toLowerCase().includes(filterText.toLowerCase()));
+  document.getElementById('theme-grid').innerHTML = list.map(t=>{
+    const count = (Math.random()*20+5).toFixed(1);
+    const following = state.following.has(t.id);
+    return `<div class="theme-card ${following?'following':''}" style="background:linear-gradient(140deg, ${t.grad[0]}, ${t.grad[1]})" onclick="openTopic('${t.id}')">
+      <div class="num">${t.dewey}</div>
+      <div><div class="name">${t.name}</div><div class="count">${count}k followers</div></div>
+    </div>`;
+  }).join('');
+}
+function searchTopics(val){ renderThemeGrid(val); }
+
+function openTopic(id){
+  state.currentTopic = id;
+  const t = TOPICS.find(x=>x.id===id);
+  document.getElementById('topic-title').innerText = t.name;
+  document.getElementById('topic-back-label').innerText = 'Discover';
+  updateFollowBtn();
+  renderTopicFeed();
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-topic').classList.add('active');
+  buildNavbar('navbar-topic', null);
+}
+function updateFollowBtn(){
+  const following = state.following.has(state.currentTopic);
+  document.getElementById('follow-btn').innerText = following ? 'Following ✓' : 'Follow';
+  document.getElementById('follow-btn').style.color = following ? '#2563a8' : '#1b4b8f';
+}
+function toggleFollowCurrentTopic(){
+  if(state.following.has(state.currentTopic)) state.following.delete(state.currentTopic);
+  else state.following.add(state.currentTopic);
+  updateFollowBtn();
+  showToast(state.following.has(state.currentTopic) ? 'Now following '+state.currentTopic : 'Unfollowed');
+}
+function renderTopicFeed(){
+  const filtered = posts.filter(p=>p.topic===state.currentTopic)
+    .sort((a,b) => (b.boosted?1:0) - (a.boosted?1:0));
+  document.getElementById('topic-feed').innerHTML = filtered.map(postHTML).join('') || '<div style="padding:40px;text-align:center;color:#5b6b85;font-size:13px;">No posts in this topic yet.</div>';
+}
+
+function openCreatorProfile(author){
+  if(author === CURRENT_USER){ goTo('profile'); return; }
+  state.currentCreator = author;
+  renderCreatorProfile();
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-creator').classList.add('active');
+  buildNavbar('navbar-creator', null);
+}
+
+function renderCreatorProfile(){
+  const author = state.currentCreator;
+  const info = CREATORS[author] || { bio:'', followers:'—', curatedTopics:[] };
+  const authorPosts = posts.filter(p=>p.author===author);
+  const mainStatus = authorPosts[0] ? authorPosts[0].status : 'enthusiast';
+  const topics = [...new Set(authorPosts.map(p=>p.topic))];
+  const totalLikes = authorPosts.reduce((sum,p)=>sum+p.likes,0);
+  const initials = author.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+  document.getElementById('creator-back').innerHTML = `← <span>${author}</span>`;
+  document.getElementById('creator-avatar').innerText = initials;
+  document.getElementById('creator-stat-posts').innerText = authorPosts.length;
+  document.getElementById('creator-stat-followers').innerText = info.followers;
+  document.getElementById('creator-stat-likes').innerText = totalLikes;
+  document.getElementById('creator-name').innerText = author;
+  const curatedTopics = info.curatedTopics || [];
+  const curatedText = curatedTopics.length
+    ? ' · ✓ Curated in ' + curatedTopics.map(id=>TOPICS.find(t=>t.id===id).name).join(', ')
+    : '';
+  document.getElementById('creator-status-badge').innerHTML = (mainStatus==='professional'
+    ? '🎓 Professional' : '✨ Enthusiast') + curatedText;
+  document.getElementById('creator-bio').innerText = info.bio;
+  document.getElementById('creator-topics').innerHTML = topics.map(id=>{
+    const t = TOPICS.find(x=>x.id===id);
+    return `<div class="interest-chip">${t.name}</div>`;
+  }).join('');
+
+  const following = state.followingCreators.has(author);
+  const followBtn = document.getElementById('creator-follow-btn');
+  followBtn.innerText = following ? 'Following ✓' : 'Follow';
+  followBtn.classList.toggle('following', following);
+
+  const contactAllowed = topics.some(id => isPremiumFor(id));
+  const contactBtn = document.getElementById('creator-contact-btn');
+  contactBtn.innerText = contactAllowed ? '✉ Contact' : '🔒 Contact';
+  contactBtn.classList.toggle('contact-locked', !contactAllowed);
+
+  document.getElementById('creator-grid').innerHTML = authorPosts.map(p=>{
+    const t = TOPICS.find(x=>x.id===p.topic);
+    return `<div class="grid-cell" style="background:${t.grad[0]}">${p.format==='text' ? p.title.slice(0,14) : p.label.slice(0,14)}</div>`;
+  }).join('') || '<div style="grid-column:1/-1;padding:30px;text-align:center;color:#5b6b85;font-size:12px;">No posts yet.</div>';
+}
+
+function toggleFollowCreator(){
+  const author = state.currentCreator;
+  if(state.followingCreators.has(author)) state.followingCreators.delete(author);
+  else state.followingCreators.add(author);
+  renderCreatorProfile();
+  showToast(state.followingCreators.has(author) ? 'Now following '+author : 'Unfollowed '+author);
+}
+
+function attemptContactCreator(){
+  const author = state.currentCreator;
+  const topics = [...new Set(posts.filter(p=>p.author===author).map(p=>p.topic))];
+  const allowed = topics.some(id => isPremiumFor(id));
+  if(!allowed){
+    const names = topics.map(id=>TOPICS.find(t=>t.id===id).name).join(' / ');
+    showToast('Premium ('+names+' or Global) required to contact this creator');
+    return;
+  }
+  showToast('Message request sent to '+author);
+}
+
+function renderProfile(){
+  document.getElementById('stat-posts').innerText = posts.filter(p=>p.author==='Claire M.').length;
+  document.getElementById('stat-following').innerText = state.following.size;
+  document.getElementById('profile-interests').innerHTML = [...state.following].map(id=>{
+    const t = TOPICS.find(x=>x.id===id);
+    return `<div class="interest-chip">${t.name}</div>`;
+  }).join('');
+
+  document.getElementById('role-professional').classList.toggle('active', state.role==='professional');
+  document.getElementById('role-enthusiast').classList.toggle('active', state.role==='enthusiast');
+  const ownCurated = (CREATORS[CURRENT_USER].curatedTopics || []);
+  const ownCuratedText = ownCurated.length
+    ? ' · ✓ Curated in ' + ownCurated.map(id=>TOPICS.find(t=>t.id===id).name).join(', ')
+    : '';
+  document.getElementById('profile-status-badge').innerHTML = (state.role==='professional'
+    ? '🎓 Professional — History' : '✨ Enthusiast — History') + ownCuratedText;
+
+  document.getElementById('dark-switch').classList.toggle('on', state.darkMode);
+
+  renderDomainPremiumGrid();
+
+  const banner = document.getElementById('premium-banner');
+  const bannerTitle = document.getElementById('premium-banner-title');
+  const bannerText = document.getElementById('premium-banner-text');
+  const bannerBtn = document.getElementById('premium-btn-text');
+  if(state.premium.global){
+    banner.style.display = 'none';
+  } else {
+    banner.style.display = 'block';
+    if(state.premium.domains.size > 0){
+      const names = [...state.premium.domains].map(id=>TOPICS.find(t=>t.id===id).name).join(', ');
+      bannerTitle.innerText = 'Premium: '+names;
+      bannerText.innerText = 'Ads are removed on these domains. Go Global to cover all 9 and message any creator.';
+      bannerBtn.innerText = 'Upgrade to Global';
+    } else {
+      bannerTitle.innerText = 'Go Premium';
+      bannerText.innerText = 'Subscribe to specific domains, or go Global to remove all ads and message any creator.';
+      bannerBtn.innerText = 'Manage Premium plans';
+    }
+  }
+
+  const grid = posts.filter(p=>p.author==='Claire M.');
+  document.getElementById('profile-grid').innerHTML = grid.map(p=>{
+    const t = TOPICS.find(x=>x.id===p.topic);
+    return `<div class="grid-cell" style="background:${t.grad[0]}">${p.format==='text' ? p.title.slice(0,14) : p.label.slice(0,14)}</div>`;
+  }).join('') || '<div style="grid-column:1/-1;padding:30px;text-align:center;color:#5b6b85;font-size:12px;">No posts published yet — try the + tab.</div>';
+}
+function setRole(role){ state.role = role; renderProfile(); showToast('Status set to '+(role==='professional'?'Professional':'Enthusiast')); }
+
+function renderDomainPremiumGrid(){
+  document.getElementById('global-switch').classList.toggle('on', state.premium.global);
+  document.getElementById('domain-premium-grid').innerHTML = TOPICS.map(t=>{
+    const active = state.premium.domains.has(t.id);
+    const disabled = state.premium.global;
+    return `<div class="domain-premium-opt ${active?'active':''} ${disabled?'disabled':''}" onclick="${disabled?'':`toggleDomainPremium('${t.id}')`}">
+      <div class="dp-name">${t.icon} ${t.name}</div>
+      <div class="dp-price">$${DOMAIN_PRICE.toFixed(2)}/mo</div>
+    </div>`;
+  }).join('');
+}
+function toggleDomainPremium(topicId){
+  if(state.premium.global) return;
+  if(state.premium.domains.has(topicId)) state.premium.domains.delete(topicId);
+  else state.premium.domains.add(topicId);
+  renderProfile();
+  renderFeed();
+  const t = TOPICS.find(x=>x.id===topicId);
+  showToast(state.premium.domains.has(topicId) ? 'Subscribed to '+t.name : 'Unsubscribed from '+t.name);
+}
+function toggleGlobalPremium(){
+  state.premium.global = !state.premium.global;
+  if(state.premium.global) state.premium.domains.clear();
+  renderProfile();
+  renderFeed();
+  showToast(state.premium.global ? 'Global Premium active — all 9 domains unlocked' : 'Global Premium cancelled');
+}
+function scrollToPremiumPlans(){
+  document.getElementById('premium-plans-block').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function toggleDarkMode(){
+  state.darkMode = !state.darkMode;
+  applyDarkMode();
+  renderProfile();
+  showToast(state.darkMode ? 'Dark mode on' : 'Dark mode off');
+}
+function applyDarkMode(){
+  document.querySelector('.screen').classList.toggle('dark-mode', state.darkMode);
+}
+
+function renderNotifications(){
+  document.getElementById('notif-list').innerHTML = notifications.map(n=>`
+    <div class="notif-row">
+      <div class="notif-icon">${n.icon}</div>
+      <div><div class="notif-txt">${n.text}</div><div class="notif-time">${n.time}</div></div>
+    </div>`).join('');
+}
+
+let publishState = { format:'video', topic:null };
+function resetPublishForm(){
+  publishState = { format:'video', topic:null };
+  document.getElementById('caption-input').value = '';
+  renderPublishForm();
+}
+function renderPublishForm(){
+  const formats = [
+    {id:'video', label:'🎬 Video'},
+    {id:'image', label:'🖼️ Image'},
+    {id:'text', label:'📝 Text'},
+  ];
+  document.getElementById('format-row').innerHTML = formats.map(f=>
+    `<div class="format-opt ${publishState.format===f.id?'active':''}" onclick="setPublishFormat('${f.id}')">${f.label}</div>`
+  ).join('');
+
+  document.getElementById('publish-theme-select').innerHTML = TOPICS.map(t=>
+    `<div class="theme-opt ${publishState.topic===t.id?'active':''}" onclick="setPublishTopic('${t.id}')">${t.icon} ${t.name}</div>`
+  ).join('');
+
+  const zone = document.getElementById('publish-media-zone');
+  if(publishState.format==='text'){
+    zone.innerHTML = '';
+  } else {
+    zone.innerHTML = `<div class="field-label" style="margin-top:16px;">Media</div>
+      <div class="upload-zone">⬆<br>Tap to import a ${publishState.format}</div>`;
+  }
+  updatePublishBtn();
+}
+function setPublishFormat(f){ publishState.format = f; renderPublishForm(); }
+function setPublishTopic(t){ publishState.topic = t; renderPublishForm(); }
+function updatePublishBtn(){
+  const btn = document.getElementById('publish-btn');
+  btn.disabled = !publishState.topic;
+}
+function submitPost(){
+  if(!publishState.topic) return;
+  const caption = document.getElementById('caption-input').value.trim() || 'New post — just published.';
+  const t = TOPICS.find(x=>x.id===publishState.topic);
+  const newPost = {
+    id: nextId++,
+    author: 'Claire M.',
+    status: state.role,
+    topic: publishState.topic,
+    format: publishState.format,
+    likes: 0, liked:false, comments:0, boosted:false,
+    caption: publishState.format!=='text' ? caption : undefined,
+    label: publishState.format!=='text' ? t.name+' post' : undefined,
+    title: publishState.format==='text' ? 'New reflection' : undefined,
+    body: publishState.format==='text' ? caption : undefined,
+  };
+  posts.unshift(newPost);
+  showToast('Post published to '+t.name);
+  goTo('home');
+}
+
+let toastTimer;
+function showToast(msg){
+  const el = document.getElementById('toast');
+  el.innerText = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 1800);
+}
+
+renderFilters();
+renderStories();
+renderFeed();
+renderThemeGrid();
+renderProfile();
+renderNotifications();
+resetPublishForm();
+renderNotifDot();
+applyDarkMode();
+buildNavbar('navbar-home','home');
+buildNavbar('navbar-discover','discover');
+buildNavbar('navbar-publish','publish');
+buildNavbar('navbar-notifications','notifications');
+buildNavbar('navbar-profile','profile');
+</script>
+</body>
+</html>
