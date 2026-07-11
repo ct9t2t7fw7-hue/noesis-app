@@ -390,21 +390,32 @@
     <div class="onboarding-overlay" id="onboarding-overlay">
       <div class="ob-header">
         <div class="ob-dots">
-          <div class="ob-dot" id="ob-dot-1"></div>
-          <div class="ob-dot" id="ob-dot-2"></div>
+          <div class="ob-dot done" id="ob-dot-1"></div>
         </div>
-        <div class="ob-eyebrow" id="ob-eyebrow">Step 1 of 2</div>
+        <div class="ob-eyebrow" id="ob-eyebrow">Getting started</div>
         <div class="ob-title" id="ob-title">What are you into?</div>
         <div class="ob-sub" id="ob-sub">Pick at least 1 topic — your "For You" feed will be built around it. You can always add more later.</div>
       </div>
       <div class="ob-body">
         <div class="ob-topic-grid" id="ob-topic-grid"></div>
-        <div class="ob-role-row" id="ob-role-row" style="display:none;"></div>
       </div>
       <div class="ob-footer">
-        <button class="ob-continue-btn" id="ob-continue-btn" onclick="onboardingContinue()" disabled>Continue</button>
+        <button class="ob-continue-btn" id="ob-continue-btn" onclick="onboardingContinue()" disabled>Enter OYDA</button>
         <div class="ob-count-hint" id="ob-count-hint">Select at least 1 topic</div>
-        <div class="ob-back-link" id="ob-back-link" style="display:none;" onclick="onboardingBack()">← Back</div>
+      </div>
+    </div>
+
+    <div class="onboarding-overlay" id="role-overlay">
+      <div class="ob-header">
+        <div class="ob-eyebrow">Before you publish</div>
+        <div class="ob-title">How do you engage with your topics?</div>
+        <div class="ob-sub">This sets your badge and how your posts are surfaced to others. You can change it anytime in Settings.</div>
+      </div>
+      <div class="ob-body">
+        <div class="ob-role-row" id="role-overlay-cards" style="display:flex;"></div>
+      </div>
+      <div class="ob-footer">
+        <button class="ob-continue-btn" id="role-overlay-continue" onclick="confirmRolePrompt()" disabled>Continue to publish</button>
       </div>
     </div>
 
@@ -708,8 +719,8 @@ const state = {
   onboardingComplete: false,
   onboardingStep: 1,
   onboardingTopics: new Set(),
-  onboardingRole: null,
   onboardingMode: 'full',
+  pendingRole: null,
   userPublishCount: 0,
 };
 
@@ -731,7 +742,7 @@ function hasAnyPremium(){
   return state.premium.global || state.premium.domains.size > 0;
 }
 
-/* ============ ONBOARDING ============ */
+/* ============ ONBOARDING (topics only) ============ */
 function renderOnboardingTopicGrid(){
   document.getElementById('ob-topic-grid').innerHTML = TOPICS.map(t=>{
     const selected = state.onboardingTopics.has(t.id);
@@ -748,71 +759,35 @@ function toggleOnboardingTopic(id){
   renderOnboardingTopicGrid();
   updateOnboardingContinueState();
 }
-function renderOnboardingRoleRow(){
-  document.getElementById('ob-role-row').innerHTML = `
-    <div class="ob-role-card ${state.onboardingRole==='professional'?'selected':''}" onclick="selectOnboardingRole('professional')">
-      <div class="ob-role-icon">🎓</div>
-      <div><div class="ob-role-title">Professional in the field</div><div class="ob-role-desc">You have formal expertise or credentials in one or more of your topics.</div></div>
-    </div>
-    <div class="ob-role-card ${state.onboardingRole==='enthusiast'?'selected':''}" onclick="selectOnboardingRole('enthusiast')">
-      <div class="ob-role-icon">✨</div>
-      <div><div class="ob-role-title">Enthusiast</div><div class="ob-role-desc">You're passionate about these topics without formal credentials.</div></div>
-    </div>`;
-}
-function selectOnboardingRole(role){
-  state.onboardingRole = role;
-  renderOnboardingRoleRow();
-  updateOnboardingContinueState();
-}
 function updateOnboardingContinueState(){
   const btn = document.getElementById('ob-continue-btn');
   const hint = document.getElementById('ob-count-hint');
-  if(state.onboardingStep===1){
-    const count = state.onboardingTopics.size;
-    btn.disabled = count < 1;
-    hint.style.display = 'block';
-    hint.innerText = count < 1 ? `Select at least 1 topic` : `${count} topic${count>1?'s':''} selected — nice mix.`;
-  } else {
-    btn.disabled = !state.onboardingRole;
-    hint.style.display = 'none';
-  }
+  const count = state.onboardingTopics.size;
+  btn.disabled = count < 1;
+  hint.style.display = 'block';
+  hint.innerText = count < 1 ? `Select at least 1 topic` : `${count} topic${count>1?'s':''} selected — nice mix.`;
 }
-function goOnboardingStep(step){
-  state.onboardingStep = step;
+function renderOnboardingCopy(){
   const isAddMore = state.onboardingMode === 'addMore';
-  document.getElementById('ob-dot-1').classList.toggle('done', step>=1);
-  document.getElementById('ob-dot-2').classList.toggle('done', step>=2 || isAddMore);
-  document.getElementById('ob-dot-2').style.display = isAddMore ? 'none' : 'block';
-  document.getElementById('ob-topic-grid').style.display = step===1 ? 'grid':'none';
-  document.getElementById('ob-role-row').style.display = (step===2 && !isAddMore) ? 'flex':'none';
-  document.getElementById('ob-back-link').style.display = (step===2 && !isAddMore) ? 'block':'none';
   if(isAddMore){
     document.getElementById('ob-eyebrow').innerText = 'Just checking in';
     document.getElementById('ob-title').innerText = 'Add more interests?';
     document.getElementById('ob-sub').innerText = "You've published a few posts — want to widen your \"For You\" feed with new topics?";
     document.getElementById('ob-continue-btn').innerText = 'Save interests';
-  } else if(step===1){
-    document.getElementById('ob-eyebrow').innerText = 'Step 1 of 2';
+  } else {
+    document.getElementById('ob-eyebrow').innerText = 'Getting started';
     document.getElementById('ob-title').innerText = 'What are you into?';
     document.getElementById('ob-sub').innerText = 'Pick at least 1 topic — your "For You" feed will be built around it. You can always add more later.';
-    document.getElementById('ob-continue-btn').innerText = 'Continue';
-  } else {
-    document.getElementById('ob-eyebrow').innerText = 'Step 2 of 2';
-    document.getElementById('ob-title').innerText = 'How do you engage with these topics?';
-    document.getElementById('ob-sub').innerText = 'This sets your badge and how your own posts are surfaced to others.';
     document.getElementById('ob-continue-btn').innerText = 'Enter OYDA';
   }
   updateOnboardingContinueState();
 }
 function onboardingContinue(){
-  if(state.onboardingMode === 'addMore'){ completeAddMoreInterests(); return; }
-  if(state.onboardingStep===1){ goOnboardingStep(2); }
+  if(state.onboardingMode === 'addMore'){ completeAddMoreInterests(); }
   else { completeOnboarding(); }
 }
-function onboardingBack(){ goOnboardingStep(1); }
 function completeOnboarding(){
   state.following = new Set(state.onboardingTopics);
-  state.role = state.onboardingRole;
   state.onboardingTopics.forEach(id=>{ state.topicAffinity[id] = (state.topicAffinity[id]||0) + 5; });
   state.onboardingComplete = true;
   document.getElementById('onboarding-overlay').classList.remove('active');
@@ -822,21 +797,17 @@ function completeOnboarding(){
 function startOnboarding(){
   state.onboardingMode = 'full';
   state.onboardingComplete = false;
-  state.onboardingStep = 1;
   state.onboardingTopics = new Set(state.following);
-  state.onboardingRole = state.role;
   document.getElementById('onboarding-overlay').classList.add('active');
   renderOnboardingTopicGrid();
-  renderOnboardingRoleRow();
-  goOnboardingStep(1);
+  renderOnboardingCopy();
 }
 function openAddInterestsPrompt(){
   state.onboardingMode = 'addMore';
-  state.onboardingStep = 1;
   state.onboardingTopics = new Set(state.following);
   document.getElementById('onboarding-overlay').classList.add('active');
   renderOnboardingTopicGrid();
-  goOnboardingStep(1);
+  renderOnboardingCopy();
 }
 function completeAddMoreInterests(){
   const newlyAdded = [...state.onboardingTopics].filter(id => !state.following.has(id));
@@ -846,6 +817,38 @@ function completeAddMoreInterests(){
   document.getElementById('onboarding-overlay').classList.remove('active');
   renderFeed(); renderProfile(); renderThemeGrid();
   showToast(newlyAdded.length ? 'Added '+newlyAdded.length+' new topic'+(newlyAdded.length>1?'s':'')+' to your feed' : 'Interests unchanged');
+}
+
+/* ============ ROLE PROMPT (asked once, at first publish) ============ */
+function renderRoleOverlayCards(){
+  document.getElementById('role-overlay-cards').innerHTML = `
+    <div class="ob-role-card ${state.pendingRole==='professional'?'selected':''}" onclick="selectPendingRole('professional')">
+      <div class="ob-role-icon">🎓</div>
+      <div><div class="ob-role-title">Professional in the field</div><div class="ob-role-desc">You have formal expertise or credentials in one or more of your topics.</div></div>
+    </div>
+    <div class="ob-role-card ${state.pendingRole==='enthusiast'?'selected':''}" onclick="selectPendingRole('enthusiast')">
+      <div class="ob-role-icon">✨</div>
+      <div><div class="ob-role-title">Enthusiast</div><div class="ob-role-desc">You're passionate about these topics without formal credentials.</div></div>
+    </div>`;
+}
+function selectPendingRole(role){
+  state.pendingRole = role;
+  renderRoleOverlayCards();
+  document.getElementById('role-overlay-continue').disabled = false;
+}
+function openRolePrompt(){
+  state.pendingRole = null;
+  document.getElementById('role-overlay').classList.add('active');
+  renderRoleOverlayCards();
+  document.getElementById('role-overlay-continue').disabled = true;
+}
+function confirmRolePrompt(){
+  if(!state.pendingRole) return;
+  state.role = state.pendingRole;
+  document.getElementById('role-overlay').classList.remove('active');
+  renderProfile();
+  showToast('Status set to '+(state.role==='professional'?'Professional':'Enthusiast'));
+  reallyGoTo('publish');
 }
 
 function buildNavbar(containerId, activeId){
@@ -859,6 +862,13 @@ function buildNavbar(containerId, activeId){
 }
 
 function goTo(tab){
+  if(tab === 'publish' && !state.role){
+    openRolePrompt();
+    return;
+  }
+  reallyGoTo(tab);
+}
+function reallyGoTo(tab){
   state.tab = tab;
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+tab).classList.add('active');
