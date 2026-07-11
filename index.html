@@ -246,6 +246,15 @@
   .creator-contact-row .creator-follow-btn{ flex:1; text-align:center; }
   .contact-locked{ background:var(--navy-900); color:var(--white); border:none; }
 
+  .creator-verified-badge{ font-size:9.5px; font-weight:800; background:var(--blue-700); color:var(--white); padding:2.5px 8px; border-radius:20px; vertical-align:middle; display:inline-block; }
+  .creator-analytics-block{ background:var(--blue-050); border:1px solid var(--blue-100); border-radius:14px; padding:14px; margin-top:16px; }
+  .creator-analytics-title{ font-size:11px; font-weight:800; color:var(--slate); text-transform:uppercase; letter-spacing:.05em; display:flex; align-items:center; gap:6px; margin-bottom:12px; }
+  .creator-analytics-tag{ background:var(--blue-700); color:var(--white); font-size:8.5px; padding:1.5px 6px; border-radius:5px; text-transform:none; letter-spacing:0; }
+  .creator-analytics-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .ca-stat{ text-align:center; background:var(--white); border-radius:10px; padding:10px 4px; }
+  .ca-stat b{ display:block; font-size:15px; color:var(--blue-800); }
+  .ca-stat span{ font-size:9px; color:var(--slate); }
+
   .profile-scroll{ flex:1; overflow-y:auto; background:var(--blue-050); }
   .profile-top{ background:var(--white); padding:20px 16px 14px; flex-shrink:0; }
   .profile-row{ display:flex; gap:14px; align-items:center; }
@@ -315,6 +324,17 @@
   textarea.caption-input{ width:100%; border:1px solid var(--blue-100); border-radius:12px; padding:12px; font-family:'Inter',sans-serif; font-size:12.5px; resize:none; height:80px; background:var(--white); outline:none; }
   .publish-btn{ margin-top:22px; background:var(--blue-700); color:var(--white); text-align:center; padding:13px; border-radius:12px; font-weight:700; font-size:13px; cursor:pointer; border:none; width:100%; }
   .publish-btn:disabled{ background:var(--blue-100); color:var(--slate); cursor:not-allowed; }
+  .publish-boost-card{
+    margin-top:16px; background:var(--white); border:1.5px solid var(--blue-100); border-radius:14px;
+    padding:14px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:.15s;
+  }
+  .publish-boost-card.active{ border-color:var(--blue-700); background:var(--blue-100); }
+  .publish-boost-icon{ width:38px;height:38px; border-radius:10px; background:var(--blue-050); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+  .publish-boost-card.active .publish-boost-icon{ background:var(--white); }
+  .publish-boost-title{ font-size:12.5px; font-weight:700; color:var(--ink); }
+  .publish-boost-sub{ font-size:10.5px; color:var(--slate); margin-top:2px; line-height:1.4; }
+  .publish-boost-check{ margin-left:auto; width:20px;height:20px; border-radius:50%; border:2px solid var(--blue-100); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--white); }
+  .publish-boost-card.active .publish-boost-check{ background:var(--blue-700); border-color:var(--blue-700); }
 
   .notif-head{ background:var(--white); padding:16px; flex-shrink:0; border-bottom:1px solid var(--blue-100); }
   .notif-list{ flex:1; overflow-y:auto; background:var(--white); }
@@ -355,6 +375,7 @@
   .screen.dark-mode .statusbar{ background:var(--white); color:var(--ink); }
   .screen.dark-mode .role-opt{ color:var(--slate); }
   .screen.dark-mode .story-name{ color:var(--slate); }
+  .screen.dark-mode .ca-stat b{ color:#a9c8f7; }
 </style>
 </head>
 <body>
@@ -374,7 +395,7 @@
         </div>
         <div class="ob-eyebrow" id="ob-eyebrow">Step 1 of 2</div>
         <div class="ob-title" id="ob-title">What are you into?</div>
-        <div class="ob-sub" id="ob-sub">Pick at least 3 topics — your "For You" feed will be built around them.</div>
+        <div class="ob-sub" id="ob-sub">Pick at least 1 topic — your "For You" feed will be built around it. You can always add more later.</div>
       </div>
       <div class="ob-body">
         <div class="ob-topic-grid" id="ob-topic-grid"></div>
@@ -382,7 +403,7 @@
       </div>
       <div class="ob-footer">
         <button class="ob-continue-btn" id="ob-continue-btn" onclick="onboardingContinue()" disabled>Continue</button>
-        <div class="ob-count-hint" id="ob-count-hint">Select at least 3 topics</div>
+        <div class="ob-count-hint" id="ob-count-hint">Select at least 1 topic</div>
         <div class="ob-back-link" id="ob-back-link" style="display:none;" onclick="onboardingBack()">← Back</div>
       </div>
     </div>
@@ -435,7 +456,7 @@
               <div class="stat"><b id="creator-stat-likes">0</b><span>Total likes</span></div>
             </div>
           </div>
-          <div class="profile-name" id="creator-name">—</div>
+          <div class="profile-name" id="creator-name"><span id="creator-name-text">—</span> <span class="creator-verified-badge" id="creator-verified-badge" style="display:none;">✓ Curated</span></div>
           <div class="profile-status" id="creator-status-badge">—</div>
           <div class="profile-bio" id="creator-bio">—</div>
           <div class="interests-row" id="creator-topics"></div>
@@ -443,6 +464,15 @@
           <div class="creator-contact-row">
             <div class="creator-follow-btn" id="creator-follow-btn" onclick="toggleFollowCreator()">Follow</div>
             <div class="creator-follow-btn contact-locked" id="creator-contact-btn" onclick="attemptContactCreator()">🔒 Contact</div>
+          </div>
+
+          <div class="creator-analytics-block" id="creator-analytics-block" style="display:none;">
+            <div class="creator-analytics-title">Creator analytics <span class="creator-analytics-tag">Pro</span></div>
+            <div class="creator-analytics-grid">
+              <div class="ca-stat"><b id="ca-avg-likes">0</b><span>Avg. likes / post</span></div>
+              <div class="ca-stat"><b id="ca-engagement">0%</b><span>Engagement rate</span></div>
+              <div class="ca-stat"><b id="ca-posts-month">0</b><span>Posts this month</span></div>
+            </div>
           </div>
         </div>
 
@@ -469,6 +499,15 @@
 
         <div class="field-label">Caption</div>
         <textarea class="caption-input" id="caption-input" placeholder="Write a short caption…"></textarea>
+
+        <div class="publish-boost-card" id="publish-boost-card" onclick="togglePublishBoost()">
+          <div class="publish-boost-icon">🚀</div>
+          <div>
+            <div class="publish-boost-title">Boost this post — $4.99</div>
+            <div class="publish-boost-sub">Promoted placement in feeds as soon as it's published (simulated).</div>
+          </div>
+          <div class="publish-boost-check" id="publish-boost-check"></div>
+        </div>
 
         <button class="publish-btn" id="publish-btn" onclick="submitPost()">Publish</button>
       </div>
@@ -670,6 +709,8 @@ const state = {
   onboardingStep: 1,
   onboardingTopics: new Set(),
   onboardingRole: null,
+  onboardingMode: 'full',
+  userPublishCount: 0,
 };
 
 const TABS = [
@@ -728,9 +769,9 @@ function updateOnboardingContinueState(){
   const hint = document.getElementById('ob-count-hint');
   if(state.onboardingStep===1){
     const count = state.onboardingTopics.size;
-    btn.disabled = count < 3;
+    btn.disabled = count < 1;
     hint.style.display = 'block';
-    hint.innerText = count < 3 ? `Select at least 3 topics (${count}/3)` : `${count} topics selected — nice mix.`;
+    hint.innerText = count < 1 ? `Select at least 1 topic` : `${count} topic${count>1?'s':''} selected — nice mix.`;
   } else {
     btn.disabled = !state.onboardingRole;
     hint.style.display = 'none';
@@ -738,15 +779,22 @@ function updateOnboardingContinueState(){
 }
 function goOnboardingStep(step){
   state.onboardingStep = step;
+  const isAddMore = state.onboardingMode === 'addMore';
   document.getElementById('ob-dot-1').classList.toggle('done', step>=1);
-  document.getElementById('ob-dot-2').classList.toggle('done', step>=2);
+  document.getElementById('ob-dot-2').classList.toggle('done', step>=2 || isAddMore);
+  document.getElementById('ob-dot-2').style.display = isAddMore ? 'none' : 'block';
   document.getElementById('ob-topic-grid').style.display = step===1 ? 'grid':'none';
-  document.getElementById('ob-role-row').style.display = step===2 ? 'flex':'none';
-  document.getElementById('ob-back-link').style.display = step===2 ? 'block':'none';
-  if(step===1){
+  document.getElementById('ob-role-row').style.display = (step===2 && !isAddMore) ? 'flex':'none';
+  document.getElementById('ob-back-link').style.display = (step===2 && !isAddMore) ? 'block':'none';
+  if(isAddMore){
+    document.getElementById('ob-eyebrow').innerText = 'Just checking in';
+    document.getElementById('ob-title').innerText = 'Add more interests?';
+    document.getElementById('ob-sub').innerText = "You've published a few posts — want to widen your \"For You\" feed with new topics?";
+    document.getElementById('ob-continue-btn').innerText = 'Save interests';
+  } else if(step===1){
     document.getElementById('ob-eyebrow').innerText = 'Step 1 of 2';
     document.getElementById('ob-title').innerText = 'What are you into?';
-    document.getElementById('ob-sub').innerText = 'Pick at least 3 topics — your "For You" feed will be built around them.';
+    document.getElementById('ob-sub').innerText = 'Pick at least 1 topic — your "For You" feed will be built around it. You can always add more later.';
     document.getElementById('ob-continue-btn').innerText = 'Continue';
   } else {
     document.getElementById('ob-eyebrow').innerText = 'Step 2 of 2';
@@ -757,6 +805,7 @@ function goOnboardingStep(step){
   updateOnboardingContinueState();
 }
 function onboardingContinue(){
+  if(state.onboardingMode === 'addMore'){ completeAddMoreInterests(); return; }
   if(state.onboardingStep===1){ goOnboardingStep(2); }
   else { completeOnboarding(); }
 }
@@ -771,6 +820,7 @@ function completeOnboarding(){
   showToast('Welcome to OYDA — your feed is personalized');
 }
 function startOnboarding(){
+  state.onboardingMode = 'full';
   state.onboardingComplete = false;
   state.onboardingStep = 1;
   state.onboardingTopics = new Set(state.following);
@@ -779,6 +829,23 @@ function startOnboarding(){
   renderOnboardingTopicGrid();
   renderOnboardingRoleRow();
   goOnboardingStep(1);
+}
+function openAddInterestsPrompt(){
+  state.onboardingMode = 'addMore';
+  state.onboardingStep = 1;
+  state.onboardingTopics = new Set(state.following);
+  document.getElementById('onboarding-overlay').classList.add('active');
+  renderOnboardingTopicGrid();
+  goOnboardingStep(1);
+}
+function completeAddMoreInterests(){
+  const newlyAdded = [...state.onboardingTopics].filter(id => !state.following.has(id));
+  state.following = new Set(state.onboardingTopics);
+  newlyAdded.forEach(id=>{ state.topicAffinity[id] = (state.topicAffinity[id]||0) + 5; });
+  state.onboardingMode = 'full';
+  document.getElementById('onboarding-overlay').classList.remove('active');
+  renderFeed(); renderProfile(); renderThemeGrid();
+  showToast(newlyAdded.length ? 'Added '+newlyAdded.length+' new topic'+(newlyAdded.length>1?'s':'')+' to your feed' : 'Interests unchanged');
 }
 
 function buildNavbar(containerId, activeId){
@@ -1131,6 +1198,14 @@ function openCreatorProfile(author){
   buildNavbar('navbar-creator', null);
 }
 
+function parseFollowerCount(str){
+  if(!str || str==='—') return 0;
+  const num = parseFloat(str);
+  if(str.toLowerCase().includes('k')) return Math.round(num*1000);
+  if(str.toLowerCase().includes('m')) return Math.round(num*1000000);
+  return Math.round(num);
+}
+
 function renderCreatorProfile(){
   const author = state.currentCreator;
   const info = CREATORS[author] || { bio:'', followers:'—', curatedTopics:[] };
@@ -1145,8 +1220,10 @@ function renderCreatorProfile(){
   document.getElementById('creator-stat-posts').innerText = authorPosts.length;
   document.getElementById('creator-stat-followers').innerText = info.followers;
   document.getElementById('creator-stat-likes').innerText = totalLikes;
-  document.getElementById('creator-name').innerText = author;
+  document.getElementById('creator-name-text').innerText = author;
+
   const curatedTopics = info.curatedTopics || [];
+  document.getElementById('creator-verified-badge').style.display = curatedTopics.length ? 'inline-block' : 'none';
   const curatedText = curatedTopics.length
     ? ' · ✓ Curated in ' + curatedTopics.map(id=>TOPICS.find(t=>t.id===id).name).join(', ')
     : '';
@@ -1167,6 +1244,19 @@ function renderCreatorProfile(){
   const contactBtn = document.getElementById('creator-contact-btn');
   contactBtn.innerText = contactAllowed ? '✉ Contact' : '🔒 Contact';
   contactBtn.classList.toggle('contact-locked', !contactAllowed);
+
+  const analyticsBlock = document.getElementById('creator-analytics-block');
+  if(mainStatus === 'professional' && authorPosts.length > 0){
+    analyticsBlock.style.display = 'block';
+    const avgLikes = Math.round(totalLikes / authorPosts.length);
+    const followerCount = parseFollowerCount(info.followers);
+    const engagement = followerCount > 0 ? Math.min(99, (totalLikes / followerCount) * 100) : 0;
+    document.getElementById('ca-avg-likes').innerText = avgLikes.toLocaleString();
+    document.getElementById('ca-engagement').innerText = engagement.toFixed(1) + '%';
+    document.getElementById('ca-posts-month').innerText = authorPosts.length;
+  } else {
+    analyticsBlock.style.display = 'none';
+  }
 
   document.getElementById('creator-grid').innerHTML = authorPosts.map(p=>{
     const t = TOPICS.find(x=>x.id===p.topic);
@@ -1293,9 +1383,9 @@ function renderNotifications(){
     </div>`).join('');
 }
 
-let publishState = { format:'video', topic:null };
+let publishState = { format:'video', topic:null, boost:false };
 function resetPublishForm(){
-  publishState = { format:'video', topic:null };
+  publishState = { format:'video', topic:null, boost:false };
   document.getElementById('caption-input').value = '';
   renderPublishForm();
 }
@@ -1320,13 +1410,22 @@ function renderPublishForm(){
     zone.innerHTML = `<div class="field-label" style="margin-top:16px;">Media</div>
       <div class="upload-zone">⬆<br>Tap to import a ${publishState.format}</div>`;
   }
+
+  document.getElementById('publish-boost-card').classList.toggle('active', publishState.boost);
+  document.getElementById('publish-boost-check').innerHTML = publishState.boost ? '✓' : '';
+
   updatePublishBtn();
+}
+function togglePublishBoost(){
+  publishState.boost = !publishState.boost;
+  renderPublishForm();
 }
 function setPublishFormat(f){ publishState.format = f; renderPublishForm(); }
 function setPublishTopic(t){ publishState.topic = t; renderPublishForm(); }
 function updatePublishBtn(){
   const btn = document.getElementById('publish-btn');
   btn.disabled = !publishState.topic;
+  btn.innerText = publishState.boost ? 'Publish & Boost — $4.99' : 'Publish';
 }
 function submitPost(){
   if(!publishState.topic) return;
@@ -1338,15 +1437,19 @@ function submitPost(){
     status: state.role,
     topic: publishState.topic,
     format: publishState.format,
-    likes: 0, liked:false, comments:0, boosted:false,
+    likes: 0, liked:false, comments:0, boosted: publishState.boost,
     caption: publishState.format!=='text' ? caption : undefined,
     label: publishState.format!=='text' ? t.name+' post' : undefined,
     title: publishState.format==='text' ? 'New reflection' : undefined,
     body: publishState.format==='text' ? caption : undefined,
   };
   posts.unshift(newPost);
-  showToast('Post published to '+t.name);
+  state.userPublishCount++;
+  showToast(publishState.boost ? 'Post published & boosted for $4.99 🚀' : 'Post published to '+t.name);
   goTo('home');
+  if(state.userPublishCount % 4 === 0){
+    setTimeout(()=> openAddInterestsPrompt(), 900);
+  }
 }
 
 let toastTimer;
