@@ -144,6 +144,10 @@
   }
   .onboarding-overlay.active{ display:flex; }
   .ob-header{ padding:20px 22px 8px; flex-shrink:0; }
+  .ob-welcome{ margin-bottom:20px; padding-bottom:18px; border-bottom:1px solid var(--blue-100); }
+  .ob-welcome-logo{ font-family:'Fraunces',serif; font-weight:600; font-size:21px; color:var(--blue-700); margin-bottom:8px; }
+  .ob-welcome-logo .dot{ color:var(--blue-500); }
+  .ob-welcome-text{ font-size:12px; color:var(--slate); line-height:1.55; }
   .ob-dots{ display:flex; gap:6px; margin-bottom:18px; }
   .ob-dot{ flex:1; height:4px; border-radius:4px; background:var(--blue-100); }
   .ob-dot.done{ background:var(--blue-700); }
@@ -192,6 +196,7 @@
   .post-name{ font-size:12.5px; font-weight:700; display:flex; align-items:center; gap:5px; }
   .badge-pro{ font-size:8px; font-weight:800; letter-spacing:.03em; color:var(--white); background:var(--blue-700); padding:1.5px 5px; border-radius:4px; }
   .post-theme{ font-size:10.5px; color:var(--slate); }
+  .post-title{ padding:0 14px 8px; font-family:'Fraunces',serif; font-weight:600; font-size:14.5px; line-height:1.3; color:var(--ink); }
   .dewey{ font-size:9px; color:var(--blue-500); font-weight:700; font-variant-numeric:tabular-nums; }
   .post-media{ height:210px; width:100%; display:flex; align-items:center; justify-content:center; position:relative; color:var(--white); font-family:'Fraunces',serif; font-size:17px; text-align:center; padding:16px; }
   .post-media.text{ background:var(--blue-050); color:var(--ink); align-items:flex-start; justify-content:flex-start; text-align:left; }
@@ -389,6 +394,10 @@
 
     <div class="onboarding-overlay" id="onboarding-overlay">
       <div class="ob-header">
+        <div class="ob-welcome" id="ob-welcome">
+          <div class="ob-welcome-logo">OYDA<span class="dot">.</span></div>
+          <div class="ob-welcome-text">OYDA is a social feed built around ideas, not people you already know — follow History, Philosophy, Art, and more, shared by creators who actually know their craft.</div>
+        </div>
         <div class="ob-dots">
           <div class="ob-dot done" id="ob-dot-1"></div>
         </div>
@@ -507,6 +516,9 @@
         <div class="theme-select" id="publish-theme-select"></div>
 
         <div id="publish-media-zone"></div>
+
+        <div class="field-label">Post title</div>
+        <input type="text" class="caption-input" id="post-title-input" placeholder="Give your post a title…" style="height:auto; padding:12px;">
 
         <div class="field-label">Caption</div>
         <textarea class="caption-input" id="caption-input" placeholder="Write a short caption…"></textarea>
@@ -769,6 +781,7 @@ function updateOnboardingContinueState(){
 }
 function renderOnboardingCopy(){
   const isAddMore = state.onboardingMode === 'addMore';
+  document.getElementById('ob-welcome').style.display = isAddMore ? 'none' : 'block';
   if(isAddMore){
     document.getElementById('ob-eyebrow').innerText = 'Just checking in';
     document.getElementById('ob-title').innerText = 'Add more interests?';
@@ -995,15 +1008,15 @@ function postHTML(p){
   const isCurated = (creatorInfo.curatedTopics || []).includes(p.topic);
   const curatedBadge = isCurated ? '<span class="badge-curated">✓ Curated</span>' : '';
   const promotedBadge = p.boosted ? '<span class="badge-promoted">🚀 Promoted</span>' : '';
+  const displayTitle = p.format === 'text' ? p.title : p.label;
   let mediaBlock = '';
   if(p.format === 'text'){
-    mediaBlock = `<div class="post-media text"><div class="text-post-body"><span class="lead">${p.title}</span><br>${p.body}</div></div>`;
+    mediaBlock = `<div class="post-media text"><div class="text-post-body">${p.body}</div></div>`;
   } else {
     const gradient = `linear-gradient(135deg, ${t.grad[0]}, ${t.grad[1]})`;
     mediaBlock = `<div class="post-media" style="background:${gradient}">
         <div class="media-tag">${p.format === 'video' ? 'Video' : 'Image'}</div>
         ${p.format==='video' ? '<div class="play-badge">▶</div>' : ''}
-        ${p.label}
       </div>`;
   }
   const boostBtn = p.author===CURRENT_USER
@@ -1020,6 +1033,7 @@ function postHTML(p){
       </div>
       ${boostBtn}
     </div>
+    <div class="post-title">${displayTitle}</div>
     ${mediaBlock}
     <div class="post-actions">
       <div class="action-btn ${p.liked?'liked':''}" onclick="toggleLike(${p.id})">${p.liked?'♥':'♡'} ${p.likes}</div>
@@ -1396,6 +1410,7 @@ function renderNotifications(){
 let publishState = { format:'video', topic:null, boost:false };
 function resetPublishForm(){
   publishState = { format:'video', topic:null, boost:false };
+  document.getElementById('post-title-input').value = '';
   document.getElementById('caption-input').value = '';
   renderPublishForm();
 }
@@ -1439,6 +1454,7 @@ function updatePublishBtn(){
 }
 function submitPost(){
   if(!publishState.topic) return;
+  const postTitle = document.getElementById('post-title-input').value.trim() || 'New reflection';
   const caption = document.getElementById('caption-input').value.trim() || 'New post — just published.';
   const t = TOPICS.find(x=>x.id===publishState.topic);
   const newPost = {
@@ -1449,8 +1465,8 @@ function submitPost(){
     format: publishState.format,
     likes: 0, liked:false, comments:0, boosted: publishState.boost,
     caption: publishState.format!=='text' ? caption : undefined,
-    label: publishState.format!=='text' ? t.name+' post' : undefined,
-    title: publishState.format==='text' ? 'New reflection' : undefined,
+    label: publishState.format!=='text' ? postTitle : undefined,
+    title: publishState.format==='text' ? postTitle : undefined,
     body: publishState.format==='text' ? caption : undefined,
   };
   posts.unshift(newPost);
