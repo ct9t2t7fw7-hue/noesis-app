@@ -273,6 +273,28 @@
   .profile-bio{ font-size:11.5px; color:var(--slate); margin-top:9px; line-height:1.45; }
   .interests-row{ display:flex; gap:5px; margin-top:11px; flex-wrap:wrap; }
   .interest-chip{ font-size:9.5px; font-weight:600; color:var(--blue-700); background:var(--blue-050); border:1px solid var(--blue-100); padding:3px 9px; border-radius:20px; }
+
+  .expertise-card{ background:linear-gradient(135deg, var(--blue-800), var(--navy-900)); border-radius:14px; padding:14px; margin-top:14px; color:var(--white); }
+  .expertise-label{ font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--blue-300); margin-bottom:10px; }
+  .expertise-main{ display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .expertise-icon{ width:40px;height:40px;border-radius:11px; background:rgba(255,255,255,.14); display:flex; align-items:center; justify-content:center; font-size:19px; flex-shrink:0; }
+  .expertise-title{ font-family:'Fraunces',serif; font-weight:600; font-size:14.5px; }
+  .expertise-points-block{ text-align:center; flex-shrink:0; padding-left:10px; }
+  .expertise-points{ font-family:'Fraunces',serif; font-weight:700; font-size:23px; line-height:1; color:var(--white); }
+  .expertise-points-label{ font-size:8.5px; color:var(--blue-300); text-transform:uppercase; letter-spacing:.06em; margin-top:2px; }
+  .expertise-sub{ font-size:10.5px; color:var(--blue-300); margin-top:2px; }
+  .expertise-bar{ height:5px; border-radius:5px; background:rgba(255,255,255,.15); overflow:hidden; }
+  .expertise-bar-fill{ height:100%; background:var(--blue-500); border-radius:5px; transition:width .3s ease; }
+  .expertise-next{ font-size:10px; color:rgba(255,255,255,.65); margin-top:8px; }
+  .expertise-compare-toggle{ margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,.14); font-size:11px; font-weight:700; color:var(--blue-300); cursor:pointer; text-align:center; }
+  .expertise-leaderboard{ margin-top:10px; display:flex; flex-direction:column; gap:6px; }
+  .lb-header{ font-size:9.5px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.05em; font-weight:800; margin-bottom:2px; }
+  .lb-row{ display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:9px; background:rgba(255,255,255,.06); }
+  .lb-row.is-you{ background:rgba(255,255,255,.2); }
+  .lb-rank{ font-size:11px; font-weight:800; width:16px; text-align:center; color:var(--blue-300); flex-shrink:0; }
+  .lb-avatar{ width:24px;height:24px;border-radius:50%; background:rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; flex-shrink:0; }
+  .lb-name{ flex:1; font-size:11.5px; font-weight:600; }
+  .lb-points{ font-size:11.5px; font-weight:700; color:var(--blue-300); }
   .settings-block{ background:var(--white); margin-top:8px; padding:16px; }
   .settings-title{ font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--slate); margin-bottom:10px; }
   .toggle-row{ display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--blue-050); }
@@ -559,6 +581,25 @@
           <div class="profile-bio">Medieval history lecturer. I turn my research into short, shareable formats.</div>
           <div class="interests-row" id="profile-interests"></div>
 
+          <div class="expertise-card" id="expertise-card">
+            <div class="expertise-label">Social Status</div>
+            <div class="expertise-main">
+              <div class="expertise-icon" id="expertise-icon">🏛️</div>
+              <div style="flex:1; min-width:0;">
+                <div class="expertise-title" id="expertise-title">Amateur Historian</div>
+                <div class="expertise-sub" id="expertise-sub">18 pts in History</div>
+              </div>
+              <div class="expertise-points-block">
+                <div class="expertise-points" id="expertise-points">18</div>
+                <div class="expertise-points-label">pts</div>
+              </div>
+            </div>
+            <div class="expertise-bar"><div class="expertise-bar-fill" id="expertise-bar-fill"></div></div>
+            <div class="expertise-next" id="expertise-next">12 pts to Expert in History</div>
+            <div class="expertise-compare-toggle" id="expertise-compare-toggle" onclick="toggleFriendsLeaderboard()">Compare with friends ▾</div>
+            <div class="expertise-leaderboard" id="expertise-leaderboard" style="display:none;"></div>
+          </div>
+
           <div class="premium-banner" id="premium-banner">
             <b id="premium-banner-title">Go Premium</b>
             <p id="premium-banner-text">Subscribe to specific domains, or go Global to remove all ads and message any creator.</p>
@@ -727,7 +768,7 @@ const state = {
   storyIndex: 0,
   darkMode: false,
   hasUnread: true,
-  topicAffinity: {},
+  topicAffinity: { history: 18, art: 9, economics: 4 },
   onboardingComplete: false,
   onboardingStep: 1,
   onboardingTopics: new Set(),
@@ -1308,6 +1349,97 @@ function attemptContactCreator(){
   showToast('Message request sent to '+author);
 }
 
+const FRIENDS = [
+  { name:'Alex', initials:'AL', points:{ history:24, philosophy:14, art:6, architecture:5, design:8, maths:3, economics:10, sport:9, animals:7 } },
+  { name:'Jordan', initials:'JO', points:{ history:9, philosophy:6, art:31, architecture:11, design:19, maths:4, economics:2, sport:2, animals:14 } },
+  { name:'Sam', initials:'SA', points:{ history:15, philosophy:8, art:4, architecture:9, design:3, maths:12, economics:27, sport:6, animals:5 } },
+  { name:'Taylor', initials:'TA', points:{ history:6, philosophy:20, art:12, architecture:16, design:14, maths:9, economics:8, sport:3, animals:11 } },
+  { name:'Morgan', initials:'MO', points:{ history:11, philosophy:9, art:17, architecture:22, design:6, maths:7, economics:5, sport:13, animals:4 } },
+];
+let friendsLeaderboardOpen = false;
+function toggleFriendsLeaderboard(){
+  friendsLeaderboardOpen = !friendsLeaderboardOpen;
+  document.getElementById('expertise-leaderboard').style.display = friendsLeaderboardOpen ? 'flex' : 'none';
+  document.getElementById('expertise-compare-toggle').innerText = friendsLeaderboardOpen ? 'Hide comparison ▴' : 'Compare with friends ▾';
+  if(friendsLeaderboardOpen) renderFriendsLeaderboard();
+}
+function renderFriendsLeaderboard(){
+  const entries = Object.entries(state.topicAffinity).filter(([id,pts]) => pts > 0);
+  if(entries.length === 0) return;
+  entries.sort((a,b) => b[1] - a[1]);
+  const [topicId, userPoints] = entries[0];
+  const t = TOPICS.find(x=>x.id===topicId);
+
+  let board = FRIENDS.map(f => ({ name:f.name, initials:f.initials, points: f.points[topicId] || 0, isYou:false }));
+  board.push({ name:'You', initials:'YOU', points:userPoints, isYou:true });
+  board.sort((a,b) => b.points - a.points);
+
+  document.getElementById('expertise-leaderboard').innerHTML =
+    `<div class="lb-header">Ranking in ${t.name}</div>` +
+    board.map((f,i) => `
+      <div class="lb-row ${f.isYou?'is-you':''}">
+        <div class="lb-rank">#${i+1}</div>
+        <div class="lb-avatar">${f.isYou ? '🙂' : f.initials}</div>
+        <div class="lb-name">${f.isYou ? 'You' : f.name}</div>
+        <div class="lb-points">${f.points} pts</div>
+      </div>`).join('');
+}
+
+const EXPERTISE_NOUNS = {
+  history: 'Historian',
+  philosophy: 'Philosopher',
+  art: 'Artist',
+  architecture: 'Architect',
+  design: 'Designer',
+  maths: 'Mathematician',
+  economics: 'Economist',
+  sport: 'Athlete',
+  animals: 'Naturalist',
+};
+const EXPERTISE_TIERS = [
+  { min:0,  label:'Curious' },
+  { min:5,  label:'Enthusiast' },
+  { min:15, label:'Amateur' },
+  { min:30, label:'Expert' },
+];
+function formatExpertiseTitle(topicId, points, tierLabel){
+  const noun = EXPERTISE_NOUNS[topicId];
+  if(tierLabel === 'Curious') return 'Curious about '+TOPICS.find(t=>t.id===topicId).name;
+  if(tierLabel === 'Enthusiast') return noun+' Enthusiast';
+  if(tierLabel === 'Amateur') return 'Amateur '+noun;
+  return 'Expert '+noun;
+}
+function renderExpertiseBadge(){
+  const card = document.getElementById('expertise-card');
+  const entries = Object.entries(state.topicAffinity).filter(([id,pts]) => pts > 0);
+  if(entries.length === 0){ card.style.display = 'none'; return; }
+  card.style.display = 'block';
+
+  entries.sort((a,b) => b[1] - a[1]);
+  const [topicId, points] = entries[0];
+  const t = TOPICS.find(x=>x.id===topicId);
+
+  let tierIndex = 0;
+  EXPERTISE_TIERS.forEach((tier,i)=>{ if(points >= tier.min) tierIndex = i; });
+  const currentTier = EXPERTISE_TIERS[tierIndex];
+  const nextTier = EXPERTISE_TIERS[tierIndex+1];
+
+  document.getElementById('expertise-icon').innerText = t.icon;
+  document.getElementById('expertise-title').innerText = formatExpertiseTitle(topicId, points, currentTier.label);
+  document.getElementById('expertise-sub').innerText = points+' pts in '+t.name;
+  document.getElementById('expertise-points').innerText = points;
+
+  if(nextTier){
+    const progress = Math.min(100, ((points - currentTier.min) / (nextTier.min - currentTier.min)) * 100);
+    document.getElementById('expertise-bar-fill').style.width = progress+'%';
+    document.getElementById('expertise-next').innerText = (nextTier.min - points)+' pts to '+nextTier.label+' in '+t.name;
+  } else {
+    document.getElementById('expertise-bar-fill').style.width = '100%';
+    document.getElementById('expertise-next').innerText = 'Top level reached in '+t.name;
+  }
+  if(friendsLeaderboardOpen) renderFriendsLeaderboard();
+}
+
 function renderProfile(){
   document.getElementById('stat-posts').innerText = posts.filter(p=>p.author==='Claire M.').length;
   document.getElementById('stat-following').innerText = state.following.size;
@@ -1327,6 +1459,8 @@ function renderProfile(){
     ? '🎓 Professional' : '✨ Enthusiast') + (primaryTopic ? ' — '+primaryTopic : '') + ownCuratedText;
 
   document.getElementById('dark-switch').classList.toggle('on', state.darkMode);
+
+  renderExpertiseBadge();
 
   renderDomainPremiumGrid();
 
