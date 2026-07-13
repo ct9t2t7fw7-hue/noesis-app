@@ -573,6 +573,38 @@
       <div class="navbar" id="navbar-notifications"></div>
     </div>
 
+    <div class="view" id="view-leaderboard">
+      <div class="discovery-head">
+        <div class="discovery-title">Leaderboard</div>
+      </div>
+      <div class="profile-scroll">
+        <div style="padding:16px;">
+          <div class="expertise-card">
+            <div class="expertise-label">Your Social Status</div>
+            <div class="expertise-main">
+              <div class="expertise-icon" id="lb-icon">🏛️</div>
+              <div style="flex:1; min-width:0;">
+                <div class="expertise-title" id="lb-title">Amateur Historian</div>
+                <div class="expertise-sub" id="lb-sub">18 pts in History</div>
+              </div>
+              <div class="expertise-points-block">
+                <div class="expertise-points" id="lb-points">18</div>
+                <div class="expertise-points-label">pts</div>
+              </div>
+            </div>
+            <div class="expertise-bar"><div class="expertise-bar-fill" id="lb-bar-fill"></div></div>
+            <div class="expertise-next" id="lb-next">12 pts to Expert in History</div>
+          </div>
+
+          <div class="expertise-card" style="margin-top:14px;">
+            <div class="expertise-label" id="lb-ranking-label">Friends Ranking</div>
+            <div class="expertise-leaderboard" id="lb-ranking-list" style="display:flex;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="navbar" id="navbar-leaderboard"></div>
+    </div>
+
     <div class="view" id="view-profile">
       <div class="profile-scroll">
         <div class="profile-top">
@@ -604,8 +636,7 @@
             </div>
             <div class="expertise-bar"><div class="expertise-bar-fill" id="expertise-bar-fill"></div></div>
             <div class="expertise-next" id="expertise-next">12 pts to Expert in History</div>
-            <div class="expertise-compare-toggle" id="expertise-compare-toggle" onclick="toggleFriendsLeaderboard()">Compare with friends ▾</div>
-            <div class="expertise-leaderboard" id="expertise-leaderboard" style="display:none;"></div>
+            <div class="expertise-compare-toggle" id="expertise-compare-toggle" onclick="goTo('leaderboard')">See full leaderboard →</div>
           </div>
 
           <div class="premium-banner" id="premium-banner">
@@ -789,7 +820,7 @@ const TABS = [
   {id:'home', icon:'🏠'},
   {id:'discover', icon:'🔎'},
   {id:'publish', icon:'＋', isPlus:true},
-  {id:'notifications', icon:'🔔'},
+  {id:'leaderboard', icon:'🏆'},
   {id:'profile', icon:'👤'},
 ];
 
@@ -939,7 +970,8 @@ function reallyGoTo(tab){
   if(tab==='discover'){ renderThemeGrid(); }
   if(tab==='profile'){ renderProfile(); }
   if(tab==='publish'){ resetPublishForm(); }
-  const map = {home:'navbar-home', discover:'navbar-discover', publish:'navbar-publish', notifications:'navbar-notifications', profile:'navbar-profile'};
+  if(tab==='leaderboard'){ renderLeaderboardScreen(); }
+  const map = {home:'navbar-home', discover:'navbar-discover', publish:'navbar-publish', notifications:'navbar-notifications', profile:'navbar-profile', leaderboard:'navbar-leaderboard'};
   Object.keys(map).forEach(t=> buildNavbar(map[t], tab));
 }
 
@@ -1405,37 +1437,8 @@ function friendActivityHTML(a){
       <div class="fa-text"><b>${a.friend}</b> just leveled up 🎉</div>
       <div class="fa-preview">${t.icon} Now <b>${title}</b></div>
     </div>
-    <div class="fa-action" onclick="goTo('profile')">Compare</div>
+    <div class="fa-action" onclick="goTo('leaderboard')">Compare</div>
   </div>`;
-}
-
-let friendsLeaderboardOpen = false;
-function toggleFriendsLeaderboard(){
-  friendsLeaderboardOpen = !friendsLeaderboardOpen;
-  document.getElementById('expertise-leaderboard').style.display = friendsLeaderboardOpen ? 'flex' : 'none';
-  document.getElementById('expertise-compare-toggle').innerText = friendsLeaderboardOpen ? 'Hide comparison ▴' : 'Compare with friends ▾';
-  if(friendsLeaderboardOpen) renderFriendsLeaderboard();
-}
-function renderFriendsLeaderboard(){
-  const entries = Object.entries(state.topicAffinity).filter(([id,pts]) => pts > 0);
-  if(entries.length === 0) return;
-  entries.sort((a,b) => b[1] - a[1]);
-  const [topicId, userPoints] = entries[0];
-  const t = TOPICS.find(x=>x.id===topicId);
-
-  let board = FRIENDS.map(f => ({ name:f.name, initials:f.initials, points: f.points[topicId] || 0, isYou:false }));
-  board.push({ name:'You', initials:'YOU', points:userPoints, isYou:true });
-  board.sort((a,b) => b.points - a.points);
-
-  document.getElementById('expertise-leaderboard').innerHTML =
-    `<div class="lb-header">Ranking in ${t.name}</div>` +
-    board.map((f,i) => `
-      <div class="lb-row ${f.isYou?'is-you':''}">
-        <div class="lb-rank">#${i+1}</div>
-        <div class="lb-avatar">${f.isYou ? '🙂' : f.initials}</div>
-        <div class="lb-name">${f.isYou ? 'You' : f.name}</div>
-        <div class="lb-points">${f.points} pts</div>
-      </div>`).join('');
 }
 
 const EXPERTISE_NOUNS = {
@@ -1462,20 +1465,43 @@ function formatExpertiseTitle(topicId, points, tierLabel){
   if(tierLabel === 'Amateur') return 'Amateur '+noun;
   return 'Expert '+noun;
 }
-function renderExpertiseBadge(){
-  const card = document.getElementById('expertise-card');
+function getTopExpertiseTopic(){
   const entries = Object.entries(state.topicAffinity).filter(([id,pts]) => pts > 0);
-  if(entries.length === 0){ card.style.display = 'none'; return; }
-  card.style.display = 'block';
-
+  if(entries.length === 0) return null;
   entries.sort((a,b) => b[1] - a[1]);
   const [topicId, points] = entries[0];
-  const t = TOPICS.find(x=>x.id===topicId);
-
   let tierIndex = 0;
   EXPERTISE_TIERS.forEach((tier,i)=>{ if(points >= tier.min) tierIndex = i; });
-  const currentTier = EXPERTISE_TIERS[tierIndex];
-  const nextTier = EXPERTISE_TIERS[tierIndex+1];
+  return { topicId, points, currentTier: EXPERTISE_TIERS[tierIndex], nextTier: EXPERTISE_TIERS[tierIndex+1] };
+}
+function renderFriendsLeaderboard(containerId){
+  const top = getTopExpertiseTopic();
+  if(!top) return;
+  const t = TOPICS.find(x=>x.id===top.topicId);
+
+  let board = FRIENDS.map(f => ({ name:f.name, initials:f.initials, points: f.points[top.topicId] || 0, isYou:false }));
+  board.push({ name:'You', initials:'YOU', points:top.points, isYou:true });
+  board.sort((a,b) => b.points - a.points);
+
+  document.getElementById(containerId).innerHTML =
+    `<div class="lb-header">Ranking in ${t.name}</div>` +
+    board.map((f,i) => `
+      <div class="lb-row ${f.isYou?'is-you':''}">
+        <div class="lb-rank">#${i+1}</div>
+        <div class="lb-avatar">${f.isYou ? '🙂' : f.initials}</div>
+        <div class="lb-name">${f.isYou ? 'You' : f.name}</div>
+        <div class="lb-points">${f.points} pts</div>
+      </div>`).join('');
+}
+
+function renderExpertiseBadge(){
+  const card = document.getElementById('expertise-card');
+  const top = getTopExpertiseTopic();
+  if(!top){ card.style.display = 'none'; return; }
+  card.style.display = 'block';
+
+  const { topicId, points, currentTier, nextTier } = top;
+  const t = TOPICS.find(x=>x.id===topicId);
 
   document.getElementById('expertise-icon').innerText = t.icon;
   document.getElementById('expertise-title').innerText = formatExpertiseTitle(topicId, points, currentTier.label);
@@ -1490,7 +1516,40 @@ function renderExpertiseBadge(){
     document.getElementById('expertise-bar-fill').style.width = '100%';
     document.getElementById('expertise-next').innerText = 'Top level reached in '+t.name;
   }
-  if(friendsLeaderboardOpen) renderFriendsLeaderboard();
+}
+
+function renderLeaderboardScreen(){
+  const top = getTopExpertiseTopic();
+  const rankingLabel = document.getElementById('lb-ranking-label');
+  if(!top){
+    document.getElementById('lb-icon').innerText = '🔍';
+    document.getElementById('lb-title').innerText = 'No status yet';
+    document.getElementById('lb-sub').innerText = 'Follow topics and like posts to start earning points.';
+    document.getElementById('lb-points').innerText = '0';
+    document.getElementById('lb-bar-fill').style.width = '0%';
+    document.getElementById('lb-next').innerText = '';
+    rankingLabel.innerText = 'Friends Ranking';
+    document.getElementById('lb-ranking-list').innerHTML = '';
+    return;
+  }
+  const { topicId, points, currentTier, nextTier } = top;
+  const t = TOPICS.find(x=>x.id===topicId);
+
+  document.getElementById('lb-icon').innerText = t.icon;
+  document.getElementById('lb-title').innerText = formatExpertiseTitle(topicId, points, currentTier.label);
+  document.getElementById('lb-sub').innerText = points+' pts in '+t.name;
+  document.getElementById('lb-points').innerText = points;
+
+  if(nextTier){
+    const progress = Math.min(100, ((points - currentTier.min) / (nextTier.min - currentTier.min)) * 100);
+    document.getElementById('lb-bar-fill').style.width = progress+'%';
+    document.getElementById('lb-next').innerText = (nextTier.min - points)+' pts to '+nextTier.label+' in '+t.name;
+  } else {
+    document.getElementById('lb-bar-fill').style.width = '100%';
+    document.getElementById('lb-next').innerText = 'Top level reached in '+t.name;
+  }
+  rankingLabel.innerText = 'Friends Ranking — '+t.name;
+  renderFriendsLeaderboard('lb-ranking-list');
 }
 
 function renderProfile(){
@@ -1688,6 +1747,7 @@ buildNavbar('navbar-discover','discover');
 buildNavbar('navbar-publish','publish');
 buildNavbar('navbar-notifications','notifications');
 buildNavbar('navbar-profile','profile');
+buildNavbar('navbar-leaderboard','leaderboard');
 startOnboarding();
 </script>
 </body>
