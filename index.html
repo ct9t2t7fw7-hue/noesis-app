@@ -219,6 +219,14 @@
   .upgrade-strip b{ color:var(--blue-300); font-family:'Fraunces',serif; font-size:12.5px; display:block; font-weight:600; }
   .mini-btn{ background:var(--blue-500); color:var(--white); font-size:10px; font-weight:700; padding:6px 10px; border-radius:8px; border:none; cursor:pointer; white-space:nowrap; }
 
+  .friend-activity-card{ background:var(--white); margin-bottom:8px; padding:12px 14px; display:flex; align-items:center; gap:10px; border-left:3px solid var(--blue-500); }
+  .friend-activity-card.level-up{ border-left-color:#f5a623; }
+  .fa-avatar{ width:36px;height:36px;border-radius:50%; background:var(--blue-600); color:var(--white); display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; flex-shrink:0; }
+  .fa-body{ flex:1; min-width:0; }
+  .fa-text{ font-size:12px; color:var(--ink); }
+  .fa-preview{ font-size:11px; color:var(--slate); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .fa-action{ font-size:10.5px; font-weight:700; color:var(--blue-700); background:var(--blue-050); padding:6px 10px; border-radius:20px; cursor:pointer; flex-shrink:0; }
+
   .navbar{ height:60px; flex-shrink:0; display:flex; align-items:center; justify-content:space-around; background:var(--white); border-top:1px solid var(--blue-100); }
   .nav-item{ display:flex; flex-direction:column; align-items:center; gap:2px; color:var(--slate); cursor:pointer; font-size:20px; width:20%; }
   .nav-item.active{ color:var(--blue-700); }
@@ -1144,12 +1152,17 @@ function renderFeed(){
   }
   const filtered = base;
   let html = '';
+  let activityIdx = 0;
   filtered.forEach((p,i)=>{
     html += postHTML(p);
     if((i+1)%5===0){
       const chunk = filtered.slice(i+1-5, i+1);
       const allCovered = chunk.every(post => isPremiumFor(post.topic));
       if(!allCovered) html += adHTML();
+    }
+    if((i+1)%4===0 && activityIdx < FRIEND_ACTIVITY.length){
+      html += friendActivityHTML(FRIEND_ACTIVITY[activityIdx]);
+      activityIdx++;
     }
   });
   if(!state.premium.global){
@@ -1356,6 +1369,46 @@ const FRIENDS = [
   { name:'Taylor', initials:'TA', points:{ history:6, philosophy:20, art:12, architecture:16, design:14, maths:9, economics:8, sport:3, animals:11 } },
   { name:'Morgan', initials:'MO', points:{ history:11, philosophy:9, art:17, architecture:22, design:6, maths:7, economics:5, sport:13, animals:4 } },
 ];
+function tierLabelForPoints(points){
+  let tierIndex = 0;
+  EXPERTISE_TIERS.forEach((tier,i)=>{ if(points >= tier.min) tierIndex = i; });
+  return EXPERTISE_TIERS[tierIndex].label;
+}
+
+const FRIEND_ACTIVITY = [
+  { type:'post', friend:'Alex', topic:'history', preview:'The economics of Roman road-building' },
+  { type:'levelup', friend:'Jordan', topic:'art' },
+  { type:'post', friend:'Sam', topic:'economics', preview:'Why opportunity cost is everywhere' },
+  { type:'levelup', friend:'Taylor', topic:'philosophy' },
+  { type:'post', friend:'Morgan', topic:'architecture', preview:'Brutalism, reconsidered' },
+  { type:'levelup', friend:'Alex', topic:'history' },
+  { type:'post', friend:'Jordan', topic:'design', preview:'Bauhaus grids, still everywhere' },
+];
+function friendActivityHTML(a){
+  const t = TOPICS.find(x=>x.id===a.topic);
+  const friend = FRIENDS.find(f=>f.name===a.friend);
+  if(a.type === 'post'){
+    return `<div class="friend-activity-card">
+      <div class="fa-avatar">${friend.initials}</div>
+      <div class="fa-body">
+        <div class="fa-text"><b>${a.friend}</b> just published in <b>${t.name}</b></div>
+        <div class="fa-preview">${t.icon} "${a.preview}"</div>
+      </div>
+      <div class="fa-action" onclick="openTopic('${t.id}')">View</div>
+    </div>`;
+  }
+  const points = friend.points[a.topic] || 0;
+  const title = formatExpertiseTitle(a.topic, points, tierLabelForPoints(points));
+  return `<div class="friend-activity-card level-up">
+    <div class="fa-avatar">${friend.initials}</div>
+    <div class="fa-body">
+      <div class="fa-text"><b>${a.friend}</b> just leveled up 🎉</div>
+      <div class="fa-preview">${t.icon} Now <b>${title}</b></div>
+    </div>
+    <div class="fa-action" onclick="goTo('profile')">Compare</div>
+  </div>`;
+}
+
 let friendsLeaderboardOpen = false;
 function toggleFriendsLeaderboard(){
   friendsLeaderboardOpen = !friendsLeaderboardOpen;
