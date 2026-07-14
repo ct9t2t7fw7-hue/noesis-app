@@ -1429,14 +1429,15 @@ const EXPERTISE_NOUNS = {
   economics: 'Economist',
 };
 const EXPERTISE_TIERS = [
-  { min:0,  label:'Curious' },
+  { min:0,  label:'Explorer' },
   { min:5,  label:'Enthusiast' },
   { min:15, label:'Amateur' },
   { min:30, label:'Expert' },
 ];
 function formatExpertiseTitle(topicId, points, tierLabel){
   const noun = EXPERTISE_NOUNS[topicId];
-  if(tierLabel === 'Curious') return 'Curious about '+TOPICS.find(t=>t.id===topicId).name;
+  const subject = TOPICS.find(t=>t.id===topicId).name;
+  if(tierLabel === 'Explorer') return subject+' Explorer';
   if(tierLabel === 'Enthusiast') return noun+' Enthusiast';
   if(tierLabel === 'Amateur') return 'Amateur '+noun;
   return 'Expert '+noun;
