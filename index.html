@@ -188,6 +188,20 @@
   .ob-count-hint{ text-align:center; font-size:10.5px; color:var(--slate); margin-top:10px; }
   .ob-back-link{ font-size:12px; color:var(--slate); text-align:center; margin-top:12px; cursor:pointer; }
 
+  .topic-quiz-banner{ margin:12px 14px 0; background:linear-gradient(120deg,var(--navy-900),var(--blue-700)); border-radius:14px; padding:13px 14px; display:flex; align-items:center; gap:12px; cursor:pointer; color:var(--white); }
+  .tqb-icon{ font-size:22px; }
+  .tqb-title{ font-family:'Fraunces',serif; font-weight:600; font-size:13px; }
+  .tqb-sub{ font-size:10.5px; color:var(--blue-300); margin-top:2px; }
+  .tqb-arrow{ font-size:16px; margin-left:auto; }
+  .tqb-done{ font-size:10.5px; font-weight:700; background:rgba(255,255,255,.2); padding:3px 9px; border-radius:20px; margin-left:auto; }
+
+  .quiz-option{ background:var(--white); border:1.5px solid var(--blue-100); border-radius:12px; padding:13px 14px; margin-bottom:9px; font-size:12.5px; font-weight:600; color:var(--ink); cursor:pointer; }
+  .quiz-option.selected{ border-color:var(--blue-700); background:var(--blue-100); }
+  .quiz-option.correct{ border-color:#16a34a; background:#dcfce7; color:#166534; }
+  .quiz-option.incorrect{ border-color:#dc2626; background:#fee2e2; color:#991b1b; }
+  .quiz-result-score{ font-family:'Fraunces',serif; font-size:28px; font-weight:600; color:var(--blue-700); text-align:center; margin-top:20px; }
+  .quiz-result-points{ text-align:center; font-size:13px; color:var(--slate); margin-top:8px; margin-bottom:6px; }
+
   .feed{ flex:1; overflow-y:auto; background:var(--blue-050); -webkit-overflow-scrolling:touch; }
   .post{ background:var(--white); margin-bottom:8px; animation:fadein .25s ease; }
   @keyframes fadein{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
@@ -414,16 +428,16 @@
       <div class="ob-header">
         <div class="ob-welcome">
           <div class="ob-welcome-logo">OYDA<span class="dot">.</span></div>
-          <div class="ob-welcome-tagline">Albert School's Learning Network</div>
-          <div class="ob-welcome-text">Sign in with your Albert School email. We'll automatically set you up as a Student or Teacher.</div>
+          <div class="ob-welcome-tagline">Paris Universities Learning Network</div>
+          <div class="ob-welcome-text">Sign in with your university email. We'll automatically set you up as a Student or Teacher.</div>
         </div>
         <div class="ob-eyebrow">Sign in</div>
-        <div class="ob-title">What's your school email?</div>
-        <div class="ob-sub">e.g. jordan.student@albert-school.fr or m.dubois.teacher@albert-school.fr</div>
+        <div class="ob-title">What's your university email?</div>
+        <div class="ob-sub">e.g. firstname.lastname@sorbonne-universite.fr, @dauphine.eu, @polytechnique.edu, @u-psud.fr…</div>
       </div>
       <div class="ob-body">
-        <div class="field-label" style="margin-top:0;">School email</div>
-        <input type="email" class="caption-input" id="login-email-input" placeholder="you@albert-school.fr" style="height:auto; padding:12px;" oninput="document.getElementById('login-error').style.display='none';">
+        <div class="field-label" style="margin-top:0;">University email</div>
+        <input type="email" class="caption-input" id="login-email-input" placeholder="you@your-university.fr" style="height:auto; padding:12px;" oninput="document.getElementById('login-error').style.display='none';">
         <div class="login-error" id="login-error" style="display:none;"></div>
       </div>
       <div class="ob-footer">
@@ -435,8 +449,8 @@
       <div class="ob-header">
         <div class="ob-welcome" id="ob-welcome">
           <div class="ob-welcome-logo">OYDA<span class="dot">.</span></div>
-          <div class="ob-welcome-tagline">Albert School's Learning Network</div>
-          <div class="ob-welcome-text">OYDA is Albert School's social feed for ideas — follow Mathematics, Data, and Economics, shared by classmates, faculty, and creators who know their craft.</div>
+          <div class="ob-welcome-tagline">Paris Universities Learning Network</div>
+          <div class="ob-welcome-text">OYDA is the shared learning feed for students and faculty across Paris universities — Sorbonne, Dauphine, Assas, Paris-Saclay, Polytechnique, and more. Follow Mathematics, Data, and Economics, shared by peers who know their craft.</div>
         </div>
         <div class="ob-dots">
           <div class="ob-dot done" id="ob-dot-1"></div>
@@ -465,6 +479,21 @@
       </div>
       <div class="ob-footer">
         <button class="ob-continue-btn" id="role-overlay-continue" onclick="confirmRolePrompt()" disabled>Continue to publish</button>
+      </div>
+    </div>
+
+    <div class="onboarding-overlay" id="quiz-overlay">
+      <div class="ob-header">
+        <div class="ob-eyebrow" id="quiz-eyebrow">Mathematics Quiz</div>
+        <div class="ob-title" id="quiz-question-title">Question 1 of 3</div>
+        <div class="ob-sub" id="quiz-question-text">Question text goes here.</div>
+      </div>
+      <div class="ob-body">
+        <div id="quiz-options"></div>
+        <div id="quiz-result" style="display:none;"></div>
+      </div>
+      <div class="ob-footer">
+        <button class="ob-continue-btn" id="quiz-next-btn" onclick="quizNext()" disabled>Next</button>
       </div>
     </div>
 
@@ -499,6 +528,14 @@
       <div class="appbar" style="padding-top:10px;">
         <div class="brand" id="topic-title" style="font-size:18px;">Topic</div>
         <div class="icon-btn" id="follow-btn" onclick="toggleFollowCurrentTopic()">Follow</div>
+      </div>
+      <div class="topic-quiz-banner" id="topic-quiz-banner" style="display:none;" onclick="openQuiz(state.currentTopic)">
+        <div class="tqb-icon">📝</div>
+        <div class="tqb-text">
+          <div class="tqb-title" id="tqb-title">Test your knowledge</div>
+          <div class="tqb-sub" id="tqb-sub">3 questions · +12 pts</div>
+        </div>
+        <div class="tqb-arrow">→</div>
       </div>
       <div class="feed" id="topic-feed"></div>
       <div class="navbar" id="navbar-topic"></div>
@@ -657,7 +694,7 @@
           <div class="toggle-row">
             <div>
               <div class="toggle-label" id="account-email">Not signed in</div>
-              <div class="toggle-sub">Signed in via Albert School email</div>
+              <div class="toggle-sub" id="account-toggle-sub">Signed in via university email</div>
             </div>
             <div class="creator-verified-badge" id="account-school-badge" style="display:none;">Student</div>
           </div>
@@ -793,6 +830,7 @@ const state = {
   role: null,
   schoolRole: null,
   userEmail: null,
+  userUniversity: null,
   following: new Set(),
   followingCreators: new Set(['Yanis K.']),
   feedTab: 'suggestions',
@@ -828,21 +866,46 @@ function attemptLogin(){
     errorEl.style.display = 'block';
     return;
   }
-  if(!email.endsWith('@albert-school.fr')){
-    errorEl.innerText = 'Use your Albert School email (e.g. yourname@albert-school.fr).';
+  const ACCEPTED_DOMAINS = [
+    'sorbonne-universite.fr','sorbonne.fr',
+    'dauphine.eu','dauphine.fr',
+    'u-paris2.fr','assas.eu',
+    'universite-paris-saclay.fr','u-psud.fr',
+    'polytechnique.edu','polytechnique.fr',
+    'sciencespo.fr',
+    'parisdescartes.fr','paris5.sorbonne.fr',
+    'univ-paris13.fr','univ-paris8.fr',
+    'albert-school.fr',
+  ];
+  const domain = email.split('@')[1];
+  const isAccepted = ACCEPTED_DOMAINS.includes(domain);
+  if(!isAccepted){
+    errorEl.innerText = 'Please use a recognized Paris university email (Sorbonne, Dauphine, Saclay, Polytechnique, Assas…)';
     errorEl.style.display = 'block';
     return;
   }
   errorEl.style.display = 'none';
 
+  const UNIVERSITY_NAMES = {
+    'sorbonne-universite.fr':'Sorbonne Université','sorbonne.fr':'Sorbonne',
+    'dauphine.eu':'Paris Dauphine','dauphine.fr':'Paris Dauphine',
+    'u-paris2.fr':'Assas','assas.eu':'Assas',
+    'universite-paris-saclay.fr':'Paris-Saclay','u-psud.fr':'Paris-Saclay',
+    'polytechnique.edu':'Polytechnique','polytechnique.fr':'Polytechnique',
+    'sciencespo.fr':'Sciences Po',
+    'parisdescartes.fr':'Paris Descartes','paris5.sorbonne.fr':'Paris V',
+    'univ-paris13.fr':'Paris 13','univ-paris8.fr':'Paris 8',
+    'albert-school.fr':'Albert School',
+  };
   const localPart = email.split('@')[0];
   const isTeacher = localPart.includes('teacher') || localPart.includes('prof');
   state.schoolRole = isTeacher ? 'teacher' : 'student';
   state.role = isTeacher ? 'professional' : 'enthusiast';
   state.userEmail = email;
+  state.userUniversity = UNIVERSITY_NAMES[domain] || domain;
 
   document.getElementById('login-overlay').classList.remove('active');
-  showToast('Signed in as '+(isTeacher ? 'Teacher' : 'Student')+' — '+email);
+  showToast('Welcome from '+state.userUniversity+' — signed in as '+(isTeacher ? 'Teacher' : 'Student'));
   renderProfile();
   startOnboarding();
 }
@@ -1531,6 +1594,10 @@ function renderLeaderboardScreen(){
 
 function renderProfile(){
   document.getElementById('account-email').innerText = state.userEmail || 'Not signed in';
+  const uniLabel = state.userUniversity ? state.userUniversity+' · ' : '';
+  document.getElementById('account-toggle-sub').innerText = state.userUniversity
+    ? 'Signed in from '+state.userUniversity
+    : 'Signed in via university email';
   const schoolBadge = document.getElementById('account-school-badge');
   const profileSchoolBadge = document.getElementById('profile-school-badge');
   if(state.schoolRole){
