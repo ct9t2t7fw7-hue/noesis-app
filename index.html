@@ -150,6 +150,21 @@
   .ob-welcome-tagline{ font-size:10.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--blue-500); margin-bottom:8px; }
   .ob-welcome-text{ font-size:12px; color:var(--slate); line-height:1.55; }
   .login-error{ font-size:11px; color:#dc2626; margin-top:8px; }
+
+  .msg-search-box{ display:flex; align-items:center; gap:8px; background:var(--blue-050); border-bottom:1px solid var(--blue-100); padding:8px 14px; font-size:12.5px; color:var(--slate); flex-shrink:0; }
+  .msg-search-box input{ border:none; background:none; outline:none; font-size:12.5px; width:100%; font-family:'Inter',sans-serif; color:var(--ink); }
+  .conv-list{ flex:1; overflow-y:auto; background:var(--white); }
+  .conv-row{ display:flex; align-items:center; gap:12px; padding:13px 16px; border-bottom:1px solid var(--blue-050); cursor:pointer; position:relative; }
+  .conv-row:active{ background:var(--blue-050); }
+  .conv-avatar{ width:46px; height:46px; border-radius:50%; background:linear-gradient(145deg,var(--blue-600),var(--blue-800)); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+  .conv-body{ flex:1; min-width:0; }
+  .conv-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:3px; }
+  .conv-name{ font-size:13.5px; font-weight:700; color:var(--ink); }
+  .conv-time{ font-size:10.5px; color:var(--slate); flex-shrink:0; }
+  .conv-preview{ font-size:12px; color:var(--slate); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .conv-preview.unread{ color:var(--ink); font-weight:600; }
+  .conv-unread-badge{ width:18px; height:18px; border-radius:50%; background:var(--blue-700); color:var(--white); font-size:10px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .conv-university{ font-size:10px; color:var(--blue-500); font-weight:600; }
   .ob-dots{ display:flex; gap:6px; margin-bottom:18px; }
   .ob-dot{ flex:1; height:4px; border-radius:4px; background:var(--blue-100); }
   .ob-dot.done{ background:var(--blue-700); }
@@ -619,8 +634,12 @@
     </div>
 
     <div class="view" id="view-messages">
-      <div class="notif-head"><div class="discovery-title" style="font-size:20px;">Messages</div></div>
-      <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--slate);font-size:13px;">Coming in part 3…</div>
+      <div class="appbar">
+        <div class="brand" style="font-size:18px;">Messages</div>
+        <div class="icon-btn" style="font-size:16px;">✏️</div>
+      </div>
+      <div class="msg-search-box">🔎 <input placeholder="Search conversations…" oninput="filterConversations(this.value)"></div>
+      <div class="conv-list" id="conv-list"></div>
       <div class="navbar" id="navbar-messages"></div>
     </div>
 
@@ -1672,7 +1691,56 @@ function applyDarkMode(){
   document.querySelector('.screen').classList.toggle('dark-mode', state.darkMode);
 }
 
-function renderMessagesList(){ /* sera implémenté en partie 3 */ }
+const CONVERSATIONS = [
+  {
+    id:1, name:'Marie L.', university:'Sorbonne', emoji:'👩‍🎓',
+    preview:'T\'as compris l\'exo sur les matrices de la semaine dernière ?', time:'09:41', unread:2,
+  },
+  {
+    id:2, name:'Lucas P.', university:'Dauphine', emoji:'👨‍💻',
+    preview:'Ok je vais regarder ça ce soir, merci !', time:'Hier', unread:0,
+  },
+  {
+    id:3, name:'Camille R.', university:'Sciences Po', emoji:'👩‍💼',
+    preview:'Vous avez vu le post de Nadia sur la corrélation ? 🔥', time:'Hier', unread:3,
+  },
+  {
+    id:4, name:'Ahmed B.', university:'Paris-Saclay', emoji:'🧑‍🔬',
+    preview:'Je t\'envoie mes notes du cours d\'éco dès que possible.', time:'Lun', unread:0,
+  },
+  {
+    id:5, name:'Inès M.', university:'Polytechnique', emoji:'👩‍🏫',
+    preview:'Réunion de groupe demain à 14h, ça te va ?', time:'Lun', unread:1,
+  },
+  {
+    id:6, name:'Théo V.', university:'Assas', emoji:'👨‍⚖️',
+    preview:'Le dataset est dispo sur le drive partagé.', time:'Dim', unread:0,
+  },
+];
+
+function renderMessagesList(filter=''){
+  const list = document.getElementById('conv-list');
+  const filtered = filter
+    ? CONVERSATIONS.filter(c => c.name.toLowerCase().includes(filter) || c.university.toLowerCase().includes(filter))
+    : CONVERSATIONS;
+  list.innerHTML = filtered.map(c => `
+    <div class="conv-row" onclick="openConversation(${c.id})">
+      <div class="conv-avatar">${c.emoji}</div>
+      <div class="conv-body">
+        <div class="conv-top">
+          <div>
+            <div class="conv-name">${c.name}</div>
+            <div class="conv-university">${c.university}</div>
+          </div>
+          <div class="conv-time">${c.time}</div>
+        </div>
+        <div class="conv-preview ${c.unread ? 'unread' : ''}">${c.unread ? c.preview : '<span style="color:var(--slate)">'+c.preview+'</span>'}</div>
+      </div>
+      ${c.unread ? `<div class="conv-unread-badge">${c.unread}</div>` : ''}
+    </div>`).join('');
+}
+function filterConversations(val){ renderMessagesList(val.trim().toLowerCase()); }
+function openConversation(id){ /* partie 4 */ }
 
 function renderNotifications(){
   document.getElementById('notif-list').innerHTML = notifications.map(n=>`
