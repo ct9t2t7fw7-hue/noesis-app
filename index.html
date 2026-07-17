@@ -252,6 +252,8 @@
   .discovery-title{ font-family:'Fraunces',serif; font-size:23px; font-weight:600; color:var(--blue-800); }
   .search-box{ margin-top:10px; background:var(--blue-050); border:1px solid var(--blue-100); border-radius:12px; padding:10px 12px; font-size:12.5px; color:var(--slate); display:flex; align-items:center; gap:8px; }
   .search-box input{ border:none; background:none; outline:none; font-size:12.5px; width:100%; font-family:'Inter',sans-serif; color:var(--ink); }
+  .home-search-box{ display:flex; align-items:center; gap:8px; background:var(--blue-050); border-bottom:1px solid var(--blue-100); padding:8px 14px; font-size:12.5px; color:var(--slate); flex-shrink:0; }
+  .home-search-box input{ border:none; background:none; outline:none; font-size:12.5px; width:100%; font-family:'Inter',sans-serif; color:var(--ink); }
   .discover-scroll{ flex:1; overflow-y:auto; background:var(--blue-050); }
   .discover-section-label{ padding:14px 16px 2px; font-size:10.5px; font-weight:800; color:var(--slate); text-transform:uppercase; letter-spacing:.06em; }
   .discover-suggest-row{ display:flex; gap:10px; padding:8px 16px 4px; overflow-x:auto; }
@@ -502,6 +504,7 @@
         <div class="brand">OYDA<span class="dot">.</span></div>
         <div class="icon-btn" onclick="goTo('notifications')">🔔<span class="notif-dot" id="notif-dot"></span></div>
       </div>
+      <div class="home-search-box">🔎 <input id="home-search-input" placeholder="Search a topic or creator…" oninput="filterHomeSearch(this.value)"></div>
       <div class="feed-tabs" id="feed-tabs"></div>
       <div class="filters" id="filters"></div>
       <div class="stories" id="stories"></div>
@@ -512,7 +515,6 @@
     <div class="view" id="view-discover">
       <div class="discovery-head">
         <div class="discovery-title">Discover</div>
-        <div class="search-box">🔎 <input placeholder="Search a topic or creator…" oninput="searchTopics(this.value)"></div>
       </div>
       <div class="discover-scroll" id="discover-scroll">
         <div class="discover-section-label" id="discover-suggest-label">Suggested for you</div>
@@ -614,6 +616,12 @@
         <button class="publish-btn" id="publish-btn" onclick="submitPost()">Publish</button>
       </div>
       <div class="navbar" id="navbar-publish"></div>
+    </div>
+
+    <div class="view" id="view-messages">
+      <div class="notif-head"><div class="discovery-title" style="font-size:20px;">Messages</div></div>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--slate);font-size:13px;">Coming in part 3…</div>
+      <div class="navbar" id="navbar-messages"></div>
     </div>
 
     <div class="view" id="view-notifications">
@@ -834,6 +842,7 @@ const state = {
   following: new Set(),
   followingCreators: new Set(['Yanis K.']),
   feedTab: 'suggestions',
+  homeSearch: '',
   storyIndex: 0,
   darkMode: false,
   hasUnread: true,
@@ -848,7 +857,7 @@ const state = {
 
 const TABS = [
   {id:'home', icon:'🏠'},
-  {id:'discover', icon:'🔎'},
+  {id:'messages', icon:'💬'},
   {id:'publish', icon:'＋', isPlus:true},
   {id:'leaderboard', icon:'🏆'},
   {id:'profile', icon:'👤'},
@@ -1044,10 +1053,11 @@ function reallyGoTo(tab){
   if(tab==='notifications'){ state.hasUnread=false; renderNotifDot(); renderNotifications(); }
   if(tab==='home'){ renderFeed(); }
   if(tab==='discover'){ renderThemeGrid(); }
+  if(tab==='messages'){ renderMessagesList(); }
   if(tab==='profile'){ renderProfile(); }
   if(tab==='publish'){ resetPublishForm(); }
   if(tab==='leaderboard'){ renderLeaderboardScreen(); }
-  const map = {home:'navbar-home', discover:'navbar-discover', publish:'navbar-publish', notifications:'navbar-notifications', profile:'navbar-profile', leaderboard:'navbar-leaderboard'};
+  const map = {home:'navbar-home', discover:'navbar-discover', publish:'navbar-publish', notifications:'navbar-notifications', profile:'navbar-profile', leaderboard:'navbar-leaderboard', messages:'navbar-messages'};
   Object.keys(map).forEach(t=> buildNavbar(map[t], tab));
 }
 
@@ -1246,6 +1256,15 @@ function renderFeed(){
   renderFilters();
   renderStories();
   let base = posts.filter(p => state.filter==='all' || p.format===state.filter);
+  if(state.homeSearch){
+    base = base.filter(p => {
+      const t = TOPICS.find(x=>x.id===p.topic);
+      return (p.title||p.label||'').toLowerCase().includes(state.homeSearch)
+          || (p.caption||p.body||'').toLowerCase().includes(state.homeSearch)
+          || p.author.toLowerCase().includes(state.homeSearch)
+          || t.name.toLowerCase().includes(state.homeSearch);
+    });
+  }
   if(state.feedTab==='following'){
     base = base.filter(isFollowedPost);
     base = [...base].sort((a,b) => (b.boosted?1:0) - (a.boosted?1:0));
@@ -1282,6 +1301,10 @@ function renderThemeGrid(filterText=''){
   if(!filterText) renderDiscoverSuggestions();
 }
 function searchTopics(val){ renderThemeGrid(val); }
+function filterHomeSearch(val){
+  state.homeSearch = val.trim().toLowerCase();
+  renderFeed();
+}
 
 function renderDiscoverSuggestions(){
   const notFollowed = TOPICS.filter(t => !state.following.has(t.id));
@@ -1649,6 +1672,8 @@ function applyDarkMode(){
   document.querySelector('.screen').classList.toggle('dark-mode', state.darkMode);
 }
 
+function renderMessagesList(){ /* sera implémenté en partie 3 */ }
+
 function renderNotifications(){
   document.getElementById('notif-list').innerHTML = notifications.map(n=>`
     <div class="notif-row">
@@ -1750,7 +1775,7 @@ resetPublishForm();
 renderNotifDot();
 applyDarkMode();
 buildNavbar('navbar-home','home');
-buildNavbar('navbar-discover','discover');
+buildNavbar('navbar-messages','home');
 buildNavbar('navbar-publish','publish');
 buildNavbar('navbar-notifications','notifications');
 buildNavbar('navbar-profile','profile');
